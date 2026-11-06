@@ -678,7 +678,6 @@
         ],
         "types": [
           "product",
-          "release",
           "research"
         ],
         "relevance": "high",
@@ -785,7 +784,6 @@
         ],
         "types": [
           "product",
-          "release",
           "research"
         ],
         "relevance": "high",
@@ -1644,7 +1642,6 @@
         ],
         "types": [
           "product",
-          "release",
           "research"
         ],
         "relevance": "high",

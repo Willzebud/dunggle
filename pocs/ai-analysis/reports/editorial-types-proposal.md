@@ -1,6 +1,6 @@
 # Types de publication — règle éditoriale
 
-> Rédigé le 2026-11-06 après B.1, puis **validé avec des précisions** (voir § 6, qui prévaut sur les §§ 2 à 5). Appliqué au prompt et à la vérité de référence.
+> Rédigé le 2026-11-06 après B.1, puis **validé avec des précisions** (voir §§ 6 et 7, qui prévalent sur les §§ 2 à 5 ; le § 7 corrige le tableau du § 6). Appliqué au prompt et à la vérité de référence.
 
 ## 1. Constat
 
@@ -89,3 +89,18 @@ Toutes les autres fixtures sont inchangées, y compris Genie 4, MCP 2099-01, les
 - « An update on Angular’s TypeScript 7-powered Compiler » : titre seul. `feature` est conservé en principal, mais un point d’avancement peut relever de `technical_analysis`.
 - « Signal Value Transforms, Routing Essentials, and Video Extension » : un récapitulatif mêle plusieurs annonces. `feature` est conservé.
 - GPT-6 Cyber : variante spécialisée d’une famille existante. `product` est conservé ; `release` n’est pas ajouté faute d’indication de nouvelle version dans les métadonnées.
+
+## 7. Vérification éditoriale avant B.2 (2026-11-06) — appliquée
+
+Critère : une comparaison avec un modèle antérieur, ou un simple numéro de version, ne suffit pas à établir une `release`. Il faut que le contenu présente explicitement la publication comme une nouvelle version d’un modèle existant.
+
+| Fixture | Contenu disponible | Constat | Types retenus |
+|---|---|---|---|
+| OrionVision (synthétique) | Texte complet | « Le laboratoire fictif Orion publie OrionVision, un modèle multimodal… » ; « 81,4, contre 76,0 pour la version précédente du même laboratoire ». OrionVision est présenté comme un modèle nouveau, sans numéro ni lien de filiation. La mention de la version précédente n’est qu’une comparaison de score. | **product**, research (`release` retiré) |
+| Gemini 4 Carbon | Titre seul (MINIMAL) | « Gemini 4 Carbon: Our next frontier model ». Seuls le numéro « 4 » et le mot « next » suggèrent une filiation, et rien n’indique une version livrée d’un modèle existant. | **product**, research (`release` retiré) |
+| Cosmos 3 Open Models | Titre seul (MINIMAL) | « New NVIDIA Cosmos 3 Open Models… ». « Open Models » établit une mise à disposition (`product`) ; le « 3 » seul ne prouve pas une release. | **product**, research (`release` retiré) |
+| Video Friday (Spot) | Titre seul (aucun texte transmis) | « Spot Plays to Show Its Whole-Body Manipulation » décrit une démonstration ; la disponibilité de cette capacité n’est pas établie. | **research**, product (inchangé, conforme au point 8) |
+
+**Prompt :** la définition de `release` précise désormais « nouvelle version d’un modèle d’IA existant explicitement présentée comme telle (une comparaison avec un modèle antérieur ou un simple numéro de version ne suffit pas) ». Les modèles appliquent ainsi le même critère que la vérité de référence. Cette précision change `PROMPT_VERSION` et allonge légèrement les requêtes.
+
+**Ambiguïté restante, non corrigée :** Gemini 4 Carbon (titre seul) a `product` en principal, alors que Genie 4 (également sans disponibilité établie) a `research` en principal. Ces deux valeurs principales datent d’avant cette révision. Les deux types restent acceptables pour les deux fixtures, donc seul l’indicateur « type principal » est concerné. Je ne les modifie pas sans votre décision.

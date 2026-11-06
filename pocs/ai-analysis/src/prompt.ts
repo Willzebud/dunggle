@@ -19,7 +19,7 @@ Réponds uniquement par l'objet JSON demandé.
 - subthemes : parmi ${SUBTHEMES.join(', ')}, ou "other:<libellé>".
 - type : l'ÉVÉNEMENT DOMINANT de la publication, une valeur parmi ${PUBLICATION_TYPES.join(', ')} :
   · security_advisory : divulgation d'une vulnérabilité, d'un exploit ou d'un correctif de sécurité ;
-  · release : version effectivement livrée d'un logiciel existant (bibliothèque, framework, SDK, CLI, langage, préversions comprises), ou nouvelle version d'un modèle d'IA existant ;
+  · release : version effectivement livrée d'un logiciel existant (bibliothèque, framework, SDK, CLI, langage, préversions comprises), ou nouvelle version d'un modèle d'IA existant explicitement présentée comme telle (une comparaison avec un modèle antérieur ou un simple numéro de version ne suffit pas) ;
   · feature : nouvelle fonctionnalité d'un produit, d'un framework ou d'une spécification existants, annoncée pour elle-même et non comme une version livrée ;
   · product : nouveau produit, service ou nouveau modèle d'IA rendu accessible (API ou poids ouverts) ;
   · breakthrough : résultat expérimental présenté comme une première ou un seuil franchi ;

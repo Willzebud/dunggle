@@ -364,7 +364,6 @@
       "acceptableExtraThemes": [],
       "types": [
         "product",
-        "release",
         "research"
       ],
       "relevance": "high",
@@ -425,7 +424,6 @@
       ],
       "types": [
         "product",
-        "release",
         "research"
       ],
       "relevance": "high",
@@ -918,7 +916,6 @@
       "acceptableExtraThemes": [],
       "types": [
         "product",
-        "release",
         "research"
       ],
       "relevance": "high",
@@ -1167,7 +1164,7 @@
       "summaryExpected": false
     }
   ],
-  "revisedAt": "2026-11-06 (préparation B.2 : règle des types validée)",
+  "revisedAt": "2026-11-06 (préparation B.2 : release retiré d’OrionVision, Gemini 4 Carbon et Cosmos 3)",
   "changeLog": [
     "Ajout de editorialDecision (must_keep / must_exclude / ambiguous), choisi explicitement par publication.",
     "Renommage de ambiguous → hardToClassify (difficulté de classification, distincte de la décision éditoriale).",
@@ -1184,6 +1181,11 @@
     "synthetic:orion-multimodal : types ['research', 'product'] → ['product', 'release', 'research'] (événement dominant : modèle rendu accessible (poids ouverts) → product ; le texte cite « la version précédente du même laboratoire » → release acceptable ; rapport technique → research acceptable)",
     "deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-o : types ['product', 'research'] → ['product', 'release', 'research'] (nouveau modèle accessible → product ; « Gemini 4 » : nouvelle version d'une famille existante → release acceptable)",
     "huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-i : types ['product', 'research'] → ['product', 'release', 'research'] (« Cosmos 3 Open Models » : modèles ouverts → product ; nouvelle version d'une famille existante → release acceptable)",
-    "ieee-robotics:https://spectrum.ieee.org/video-friday-whole-b : types ['product', 'research'] → ['research', 'product'] (démonstration de manipulation corps entier dont la disponibilité n'est pas établie → research en principal (règle Video Friday))"
+    "ieee-robotics:https://spectrum.ieee.org/video-friday-whole-b : types ['product', 'research'] → ['research', 'product'] (démonstration de manipulation corps entier dont la disponibilité n'est pas établie → research en principal (règle Video Friday))",
+    "Vérification éditoriale avant B.2 (une comparaison avec un modèle antérieur ou un simple numéro de version ne prouve pas une release) :",
+    "deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-o : types [\"product\",\"release\",\"research\"] → [\"product\",\"research\"] (titre seul (MINIMAL) ; le numéro « 4 » ne suffit pas à établir une nouvelle version d’un modèle existant)",
+    "huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-i : types [\"product\",\"release\",\"research\"] → [\"product\",\"research\"] (titre seul (MINIMAL) ; « Open Models » établit la mise à disposition (product), mais le numéro « 3 » ne suffit pas à établir une release)",
+    "synthetic:orion-multimodal : types [\"product\",\"release\",\"research\"] → [\"product\",\"research\"] (le texte compare le score d’OrionVision à « la version précédente du même laboratoire » sans présenter OrionVision comme une nouvelle version d’un modèle existant ; une comparaison ne suffit pas)",
+    "ieee-robotics:…video-friday-whole-body-manipulation : inchangé [\"research\",\"product\"] (titre : démonstration de manipulation ; disponibilité de la capacité non établie)"
   ]
 }

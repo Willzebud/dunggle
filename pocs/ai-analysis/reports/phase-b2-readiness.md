@@ -19,11 +19,11 @@
 | Modèles | `anthropic-haiku-5-5`, `openai-gpt-6-luna` (validés) |
 | OrionVision | Réanalysée (option 1) : nouveau prompt avec les définitions des types. Les résultats B.1 restent dans le registre et dans `var/runs/` pour l’historique, mais `poc2:compare` ne retient que les exécutions B.2 du prompt courant |
 | **Appels prévus** | **74** (37 par modèle), égal au quota B.2 (37 par modèle, 74 au total) |
-| **Coût maximal réservé** | **0,118793 €** |
-| Bornes | entrée ≤ 16 000 tokens par requête (plan : 7 658 à 8 799), sortie ≤ 800 tokens |
+| **Coût maximal réservé** | **0,120136 €** (autorisation à demander : 0,13 €) |
+| Bornes | entrée ≤ 16 000 tokens par requête (plan : 7 787 à 8 928), sortie ≤ 800 tokens |
 | **Durée estimée** | **≈ 37 min** en régime typique ; 74 min si chaque appel atteignait le délai maximal de 60 s |
 | Activation B.2 | 90 min |
-| Budget | 0,50 € au total, 0,000854 € dépensés ; après B.2, au moins **0,380353 €** restants |
+| Budget | 0,50 € au total, 0,000854 € dépensés ; après B.2, au moins **0,379010 €** restants |
 
 Protections inchangées :
 - quotas cumulatifs ;
@@ -64,7 +64,7 @@ Seules les fixtures synthétiques FULL ont un texte à résumer : les sources r�
 
 ## 5. Décisions en attente
 
-Règle des types validée et appliquée (`editorial-types-proposal.md` § 6). Restent trois ambiguïtés mineures, qui n’affectent que l’indicateur « type principal ».
+Règle des types validée et appliquée (`editorial-types-proposal.md` §§ 6 et 7). `release` a été retiré d’OrionVision, de Gemini 4 Carbon et de Cosmos 3 après vérification éditoriale. Restent trois ambiguïtés mineures, qui n’affectent que l’indicateur « type principal ».
 
 ## 6. Risques résiduels
 

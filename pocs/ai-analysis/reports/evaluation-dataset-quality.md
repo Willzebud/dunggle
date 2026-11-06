@@ -1,6 +1,6 @@
 # POC 2 — Qualité du jeu d’évaluation (phase A.1)
 
-> Généré par `npm run prepare:eval` le 2026-11-06. Vérité terrain révisée : 2026-11-06 (préparation B.2 : règle des types validée).
+> Généré par `npm run prepare:eval` le 2026-11-06. Vérité terrain révisée : 2026-11-06 (préparation B.2 : release retiré d’OrionVision, Gemini 4 Carbon et Cosmos 3).
 
 ## Composition
 
@@ -45,6 +45,11 @@
 - deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-o : types ['product', 'research'] → ['product', 'release', 'research'] (nouveau modèle accessible → product ; « Gemini 4 » : nouvelle version d'une famille existante → release acceptable)
 - huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-i : types ['product', 'research'] → ['product', 'release', 'research'] (« Cosmos 3 Open Models » : modèles ouverts → product ; nouvelle version d'une famille existante → release acceptable)
 - ieee-robotics:https://spectrum.ieee.org/video-friday-whole-b : types ['product', 'research'] → ['research', 'product'] (démonstration de manipulation corps entier dont la disponibilité n'est pas établie → research en principal (règle Video Friday))
+- Vérification éditoriale avant B.2 (une comparaison avec un modèle antérieur ou un simple numéro de version ne prouve pas une release) :
+- deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-o : types ["product","release","research"] → ["product","research"] (titre seul (MINIMAL) ; le numéro « 4 » ne suffit pas à établir une nouvelle version d’un modèle existant)
+- huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-i : types ["product","release","research"] → ["product","research"] (titre seul (MINIMAL) ; « Open Models » établit la mise à disposition (product), mais le numéro « 3 » ne suffit pas à établir une release)
+- synthetic:orion-multimodal : types ["product","release","research"] → ["product","research"] (le texte compare le score d’OrionVision à « la version précédente du même laboratoire » sans présenter OrionVision comme une nouvelle version d’un modèle existant ; une comparaison ne suffit pas)
+- ieee-robotics:…video-friday-whole-body-manipulation : inchangé ["research","product"] (titre : démonstration de manipulation ; disponibilité de la capacité non établie)
 
 ## Sources à couverture obligatoire
 

@@ -86,7 +86,7 @@ test('B.2 : 37 publications éligibles × 2 modèles = 74 appels alternés, orio
   assert.ok(plan.calls.every((c) => c.inputTokensUpperBound <= DEFAULT_LIMITS.maxInputTokensPerRequest));
   const s = await g.snapshot();
   assert.ok(plan.totalMaxEur + s.trial.spentEur < DEFAULT_LIMITS.trialTotalCapEur, 'budget cumulé respecté');
-  assert.ok(plan.totalMaxEur < 0.12);
+  assert.ok(plan.totalMaxEur < 0.13);
 });
 
 test('B.2 : durée estimée compatible avec l’activation B.2 (90 min), B.1 inchangé, plafond absolu', async () => {
@@ -112,8 +112,8 @@ test('B.2 : durée estimée compatible avec l’activation B.2 (90 min), B.1 inc
 let ACT_B2: RealCallActivation;
 before(async () => {
   const dir = `${await mkdtemp(join(tmpdir(), 'dunggle-act-'))}/`;
-  await createGrant({ phase: 'B2', models: MODELS2, maxEur: 0.12, confirm: confirmationPhrase('B2', 0.12) }, dir);
-  ACT_B2 = await consumeGrant(dir, { phase: 'B2', models: MODELS2, maxEur: 0.12 });
+  await createGrant({ phase: 'B2', models: MODELS2, maxEur: 0.13, confirm: confirmationPhrase('B2', 0.13) }, dir);
+  ACT_B2 = await consumeGrant(dir, { phase: 'B2', models: MODELS2, maxEur: 0.13 });
 });
 const env = { ANTHROPIC_API_KEY: ['sk', 'ant', 'api03', 'TESTB2xxxxxxxxxxxxxxxxxxxxx'].join('-'), OPENAI_API_KEY: ['sk', 'proj', 'TESTB2xxxxxxxxxxxxxxxxxxxxxxx'].join('-') } as NodeJS.ProcessEnv;
 function deps(guard: BudgetGuard, opts: { stopAfter?: number; activation?: RealCallActivation | null; now?: () => number } = {}): RunDeps & { calls: string[] } {
@@ -134,7 +134,7 @@ test('B.2 : interruption (Ctrl+C) puis reprise : aucune réservation ouverte, au
   const dir = await mkdtemp(join(tmpdir(), 'dunggle-resume-'));
   try {
     const g = await guardAfterB1(new FileBudgetStore(join(dir, 'ledger.json')) as unknown as MemoryBudgetStore);
-    const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.12']);
+    const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.13']);
     const d1 = deps(g, { stopAfter: 10 });
     const r1 = await executeRun(args, planRun(args, evaluationSet.items, g, await g.snapshot()), d1);
     assert.equal(r1.records.length, 10);
@@ -165,7 +165,7 @@ test('B.2 : interruption (Ctrl+C) puis reprise : aucune réservation ouverte, au
 
 test('B.2 : activation insuffisante pour la durée estimée → exécution refusée avant tout appel', async () => {
   const g = await guardAfterB1();
-  const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.12']);
+  const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.13']);
   // Horloge simulée : il ne reste que 20 minutes de validité.
   const d = deps(g, { now: () => ACT_B2.validUntil - 20 * 60_000 });
   const r = await executeRun(args, planRun(args, evaluationSet.items, g, await g.snapshot()), d);
