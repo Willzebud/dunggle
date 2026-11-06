@@ -19,9 +19,15 @@ export interface BudgetLimits {
   safetyMultiplier: number;
   /** Conversion prudente USD → EUR (borne haute assumée, à réviser). */
   eurPerUsd: number;
+  /**
+   * Arrêt sécurisé : tant qu'un coût incertain n'est pas réconcilié, toute nouvelle réservation est refusée.
+   * Désactivable uniquement par code (tests), jamais par une donnée d'entrée ni un argument CLI.
+   */
+  blockWhenUncertain: boolean;
 }
 
-export const DEFAULT_LIMITS: BudgetLimits = {
+/** Gelé : aucune partie du programme ne peut modifier les plafonds à l'exécution. */
+export const DEFAULT_LIMITS: Readonly<BudgetLimits> = Object.freeze({
   monthlyHardCapEur: 10,
   monthlyOperationalCapEur: 8,
   trialTotalCapEur: 0.5,
@@ -30,7 +36,8 @@ export const DEFAULT_LIMITS: BudgetLimits = {
   maxOutputTokensPerRequest: 800,
   safetyMultiplier: 1.25,
   eurPerUsd: 1.0,
-};
+  blockWhenUncertain: true,
+});
 
 /** Estimation TYPIQUE (projections) : 1 token pour 3 caractères. Ce n'est PAS une borne haute. */
 export const CHARS_PER_TOKEN_TYPICAL = 3;

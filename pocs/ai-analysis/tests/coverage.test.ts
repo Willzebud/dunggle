@@ -45,7 +45,7 @@ test('couverture obligatoire : doublon avéré exclu ; version majeure dans le f
 test('couverture obligatoire : ne neutralise pas les restrictions de contenu (metadata-only)', async () => {
   const adapter = ok({ themes: ['ANGULAR'], type: 'release', summary: 'Résumé non autorisé.', keyPoints: ['x'] });
   const r = await analyzePublication({ ...angularRelease, text: 'Notes de release présentes localement.' }, { adapter, guard: guard() });
-  assert.equal(JSON.parse(adapter.calls[0].user).text, null);
+  assert.equal(JSON.parse(adapter.calls[0].user).untrustedPublication.text, null);
   assert.equal(r.analysis!.summary, null);
   assert.ok(r.violations.some((v) => v.startsWith('summary-forbidden')));
 });

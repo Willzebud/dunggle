@@ -25,8 +25,11 @@
 | Entrée de 120 000 tokens (plafond 16 000) | refus request-too-large | refus request-too-large | ✅ |
 | Réservation dont le maximum dépasse le budget d’essai restant | refus trial-cap | refus trial-cap | ✅ |
 | Timeout après envoi, usage inconnu | facturé au maximum (0.000875 €), marqué incertain | 0.000875 €, incertain 0.000875 € | ✅ |
-| Réconciliation (2 400 entrée / 300 sortie, Haiku 5.5) | 0,00039 € (= (2400×0,10 + 300×0,50)/1e6) | 0.00039 € | ✅ |
+| Nouvelle analyse alors qu’un coût est incertain | refus uncertain-pending (arrêt sécurisé) | refus uncertain-pending | ✅ |
 | Libérer un coût incertain | refus unknown-reservation (jamais libéré) | refus unknown-reservation | ✅ |
+| Après réconciliation manuelle du coût incertain | accepté | accepté | ✅ |
+| Réconciliation (2 400 entrée / 300 sortie, Haiku 5.5) | 0,00039 € (= (2400×0,10 + 300×0,50)/1e6) | 0.00039 € | ✅ |
+| Même analyse réservée deux fois (doublon, relance, scheduler) | refus duplicate-analysis | refus duplicate-analysis | ✅ |
 | Coût réel (0,025 €) > estimation (0,00075 €), budget d’essai 0,02 € | dette enregistrée, appel suivant refusé | dépense 0.025 €, appel suivant : refus trial-cap | ✅ |
 | Réservation le 31/10 à 23:59, réconciliée le 01/11 | imputée à octobre ; novembre repart de zéro | octobre 0.0006 €, novembre : accepté | ✅ |
 

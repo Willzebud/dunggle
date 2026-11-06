@@ -3,7 +3,8 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DEFAULT_LIMITS, type BudgetLimits } from '../config/budget.js';
 import { MODELS, type ModelConfig, type PriceTier } from '../config/models.js';
-import type { BudgetStore, LedgerState, Reservation, UncertainEntry } from './store.js';
+import type { AnalysisEntry, BudgetStore, LedgerState, Reservation, UncertainEntry } from './store.js';
+import { redactDeep, redactSecrets } from '../security/redact.js';
 
 export type RefusalCode =
   | 'unknown-pricing'
@@ -14,7 +15,9 @@ export type RefusalCode =
   | 'monthly-hard'
   | 'trial-cap'
   | 'invalid-limits'
-  | 'unknown-reservation';
+  | 'unknown-reservation'
+  | 'uncertain-pending'
+  | 'duplicate-analysis';
 
 export class BudgetRefusedError extends Error {
   constructor(
@@ -47,7 +50,7 @@ export interface UsageLogger {
 export class MemoryUsageLogger implements UsageLogger {
   readonly events: UsageEvent[] = [];
   async log(e: UsageEvent) {
-    this.events.push(e);
+    this.events.push(redactDeep(e));
   }
 }
 
@@ -56,7 +59,7 @@ export class JsonlUsageLogger implements UsageLogger {
   constructor(private readonly path: string) {}
   async log(e: UsageEvent) {
     await mkdir(dirname(this.path), { recursive: true });
-    await appendFile(this.path, `${JSON.stringify(e)}\n`);
+    await appendFile(this.path, `${JSON.stringify(redactDeep(e))}\n`);
   }
 }
 
@@ -86,7 +89,7 @@ export function validateLimits(l: BudgetLimits): string[] {
 export class BudgetGuard {
   constructor(
     private readonly store: BudgetStore,
-    readonly limits: BudgetLimits = DEFAULT_LIMITS,
+    readonly limits: Readonly<BudgetLimits> = DEFAULT_LIMITS,
     private readonly logger: UsageLogger = new MemoryUsageLogger(),
     private readonly now: () => Date = () => new Date(),
     private readonly models: Record<string, ModelConfig> = MODELS,
@@ -133,7 +136,7 @@ export class BudgetGuard {
   }
 
   /** Réserve le coût maximal AVANT tout appel. Refuse (sans rien réserver) si un plafond serait dépassé. */
-  async reserve(req: { modelKey: string; inputTokensEstimate: number; maxOutputTokens?: number; scope?: 'trial' | 'operational' }): Promise<Reservation> {
+  async reserve(req: { modelKey: string; inputTokensEstimate: number; maxOutputTokens?: number; scope?: 'trial' | 'operational'; idempotencyKey?: string }): Promise<Reservation> {
     const scope = req.scope ?? 'trial';
     const maxOut = req.maxOutputTokens ?? this.limits.maxOutputTokensPerRequest;
     const { month, day, at } = this.keys();
@@ -147,6 +150,15 @@ export class BudgetGuard {
     const L = this.limits;
     try {
       const res = await this.store.transaction((s) => {
+        // Arrêt sécurisé : aucune nouvelle dépense tant qu'un coût reste incertain.
+        const pending = Object.keys(s.uncertain).length;
+        if (L.blockWhenUncertain && pending > 0) {
+          throw new BudgetRefusedError('uncertain-pending', `${pending} coût(s) incertain(s) non réconcilié(s) : nouvelles analyses bloquées (resolveUncertain requis)`);
+        }
+        // Idempotence : une même analyse n'est jamais réservée deux fois (doublons, concurrence, relance, scheduler).
+        if (req.idempotencyKey && s.analyses[req.idempotencyKey]) {
+          throw new BudgetRefusedError('duplicate-analysis', `Analyse déjà ${s.analyses[req.idempotencyKey].status} : ${req.idempotencyKey}`);
+        }
         const m = (s.months[month] ??= { spentEur: 0, reservedEur: 0, uncertainEur: 0 });
         const dd = (s.days[day] ??= { analyses: 0 });
         if (dd.analyses >= L.dailyMaxAnalyses) throw new BudgetRefusedError('daily-limit', `Quota quotidien atteint (${L.dailyMaxAnalyses} analyses)`);
@@ -157,7 +169,9 @@ export class BudgetGuard {
         if (scope === 'trial' && s.trial.spentEur + s.trial.reservedEur + est > L.trialTotalCapEur) {
           throw new BudgetRefusedError('trial-cap', `Budget d’essai du POC (${L.trialTotalCapEur} €) serait dépassé`);
         }
-        const r: Reservation = { id: randomUUID(), modelKey: req.modelKey, scope, estimatedMaxEur: est, inputTokensEstimate: req.inputTokensEstimate, maxOutputTokens: maxOut, month, day, createdAt: at };
+        const r: Reservation = { id: randomUUID(), modelKey: req.modelKey, scope, estimatedMaxEur: est, inputTokensEstimate: req.inputTokensEstimate, maxOutputTokens: maxOut, month, day, createdAt: at, idempotencyKey: req.idempotencyKey };
+        if (req.idempotencyKey) s.analyses[req.idempotencyKey] = { status: 'in-progress', reservationId: r.id, modelKey: req.modelKey, since: at };
+        s.sequence = (s.sequence ?? 0) + 1;
         m.reservedEur = round6(m.reservedEur + est);
         if (scope === 'trial') s.trial.reservedEur = round6(s.trial.reservedEur + est);
         dd.analyses += 1;
@@ -212,6 +226,7 @@ export class BudgetGuard {
       if (!res) throw new BudgetRefusedError('unknown-reservation', `Réservation inconnue ou déjà soldée : ${id}`);
       const cost = this.actualCostEur(res.modelKey, usage.inputTokens, usage.outputTokens);
       r = this.settle(s, id, cost);
+      if (r.idempotencyKey && s.analyses[r.idempotencyKey]) s.analyses[r.idempotencyKey] = { ...s.analyses[r.idempotencyKey], status: 'completed', costEur: cost };
       return cost;
     });
     await this.logger.log({ at, event: 'reconciled', reservationId: id, modelKey: r.modelKey, actualEur: actual, estimatedMaxEur: r.estimatedMaxEur, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens });
@@ -234,8 +249,9 @@ export class BudgetGuard {
       this.settle(s, id, r.estimatedMaxEur);
       const m = s.months[r.month];
       m.uncertainEur = round6(m.uncertainEur + r.estimatedMaxEur);
-      const u: UncertainEntry = { id, modelKey: r.modelKey, scope: r.scope, chargedEur: r.estimatedMaxEur, month: r.month, reason, since: at };
+      const u: UncertainEntry = { id, modelKey: r.modelKey, scope: r.scope, chargedEur: r.estimatedMaxEur, month: r.month, reason: redactSecrets(reason), since: at };
       s.uncertain[id] = u;
+      if (r.idempotencyKey && s.analyses[r.idempotencyKey]) s.analyses[r.idempotencyKey] = { ...s.analyses[r.idempotencyKey], status: 'uncertain', costEur: r.estimatedMaxEur };
       return u;
     });
     await this.logger.log({ at, event: 'uncertain', reservationId: id, modelKey: entry.modelKey, actualEur: entry.chargedEur, detail: reason });
@@ -272,6 +288,8 @@ export class BudgetGuard {
     const { at } = this.keys();
     const r = await this.store.transaction((s) => {
       const res = this.settle(s, id, 0);
+      // Requête certainement non facturée : l'analyse peut être retentée (nouvelle réservation complète).
+      if (res.idempotencyKey && s.analyses[res.idempotencyKey]?.status === 'in-progress') delete s.analyses[res.idempotencyKey];
       const dd = s.days[res.day];
       if (dd) dd.analyses = Math.max(0, dd.analyses - 1);
       return res;
@@ -295,6 +313,19 @@ export class BudgetGuard {
     const { at } = this.keys();
     for (const id of done) await this.logger.log({ at, event: 'expired', reservationId: id, detail: 'convertie en coût incertain' });
     return done;
+  }
+
+  /** Enregistre le résultat validé d'une analyse déjà soldée (completed / uncertain). */
+  async recordResult(idempotencyKey: string, result: unknown): Promise<void> {
+    await this.store.transaction((s) => {
+      const a = s.analyses[idempotencyKey];
+      if (!a) throw new BudgetRefusedError('unknown-reservation', `Analyse inconnue : ${idempotencyKey}`);
+      a.result = redactDeep(result);
+    });
+  }
+
+  async getAnalysis(idempotencyKey: string): Promise<AnalysisEntry | undefined> {
+    return (await this.store.read()).analyses[idempotencyKey];
   }
 
   async snapshot(): Promise<LedgerState> {

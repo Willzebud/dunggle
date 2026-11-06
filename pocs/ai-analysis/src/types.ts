@@ -50,6 +50,7 @@ export type AnalysisStatus =
   | 'analyzed'
   | 'skipped-blocked'
   | 'skipped-editorial'
+  | 'skipped-duplicate'
   | 'refused-budget'
   | 'refused-unknown-pricing'
   | 'provider-error'
@@ -78,5 +79,8 @@ export interface AnalysisRecord {
   model: string | null;
   costEur: number | null;
   costUncertain: boolean;
+  /** Usage facturable normalisé et usage brut du fournisseur (compteurs uniquement). */
+  usage?: { billable: { inputTokens: number; outputTokens: number; reasoningTokens?: number } | null; raw: Record<string, unknown> | null };
+  stopReason?: string | null;
   error?: string;
 }

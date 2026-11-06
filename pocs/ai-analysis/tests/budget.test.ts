@@ -64,7 +64,8 @@ test('budget : quota quotidien d’analyses', async () => {
 
 test('budget : réconciliation avec l’usage réel, libération et coût incertain', async () => {
   const log = new MemoryUsageLogger();
-  const g = new BudgetGuard(new MemoryBudgetStore(), limits(), log, fixedNow);
+  // blockWhenUncertain désactivé ici (par code) pour enchaîner les cas ; le blocage est testé dans security.test.ts
+  const g = new BudgetGuard(new MemoryBudgetStore(), limits({ blockWhenUncertain: false }), log, fixedNow);
   const r1 = await g.reserve({ modelKey: 'mock-cheap', inputTokensEstimate: 1000 });
   const actual = await g.reconcile(r1.id, { inputTokens: 900, outputTokens: 100 });
   assert.equal(actual, 0.0014); // (900 × 1 + 100 × 5)/1e6

@@ -1,11 +1,12 @@
 import type { ModelConfig } from '../config/models.js';
-import { RealCallsDisabledError, type AIAdapter, type AnalysisRequest, type AnalysisResponse, type ProviderUsage } from './types.js';
+import { ProviderError, RealCallsDisabledError, type AIAdapter, type AnalysisRequest, type AnalysisResponse, type ProviderUsage } from './types.js';
+import { redactSecrets } from '../security/redact.js';
 
 /**
- * PHASE A : aucun appel réel. Cette constante n'est PAS pilotable par variable d'environnement,
- * pour qu'aucune configuration ne puisse déclencher une facturation par erreur. En phase B,
- * l'activation passera par une modification de code revue, avec le SDK officiel de chaque fournisseur
- * (@anthropic-ai/sdk, openai) et le budget d'essai de 0,50 €.
+ * Interrupteur principal des appels payants. Il n'est PAS pilotable par variable d'environnement ni par
+ * argument : l'activer exige une modification de code revue et committée (autorisation explicite de B.1).
+ * Même activé, un appel exige aussi : --real, --confirm-max-eur suffisant, clé présente, modèle validé,
+ * registre budgétaire intègre, aucun coût incertain en attente (voir src/runner/).
  */
 export const REAL_CALLS_ENABLED = false as const;
 
@@ -54,28 +55,116 @@ export function buildOpenAIParams(model: ModelConfig, req: AnalysisRequest) {
   };
 }
 
+/** Client minimal attendu (SDK officiel en production, faux client dans les tests : aucun réseau). */
+export interface MessagesClient {
+  messages: { create(params: Record<string, unknown>): Promise<any> };
+}
+export interface ResponsesClient {
+  responses: { create(params: Record<string, unknown>): Promise<any> };
+}
+
+/** Options réseau imposées aux SDK : AUCUNE relance automatique (non budgétée), délai borné. */
+export const SDK_OPTIONS = { maxRetries: 0, timeout: 60_000 } as const;
+
+/**
+ * Classe une erreur SDK selon son risque financier :
+ * - statut HTTP 4xx (requête refusée : authentification, validation, limite de débit ou de dépense) :
+ *   non traitée par le fournisseur → requestSent = false (aucun coût) ;
+ * - 5xx, délai dépassé, coupure réseau : la requête a pu être traitée → coût incertain (requestSent = true).
+ * Le message est masqué (aucun secret) avant d'être propagé.
+ */
+export function classifySdkError(e: unknown): ProviderError {
+  const err = e as { status?: number; name?: string; message?: string };
+  const msg = redactSecrets(String(err?.message ?? e));
+  const status = typeof err?.status === 'number' ? err.status : undefined;
+  if (status !== undefined && status >= 400 && status < 500) {
+    const kind = status === 401 || status === 403 ? 'auth' : status === 429 ? 'rate-limit' : 'invalid-request';
+    return new ProviderError(kind, `HTTP ${status} : ${msg}`, false);
+  }
+  if (status !== undefined && status >= 500) return new ProviderError('server', `HTTP ${status} : ${msg}`, true);
+  if (/timeout/i.test(err?.name ?? '') || /timed? ?out/i.test(msg)) return new ProviderError('timeout', msg, true);
+  return new ProviderError('network', msg, true);
+}
+
+function assertEnabled(enabled: boolean, provider: string, model: ModelConfig, env: NodeJS.ProcessEnv) {
+  if (!enabled) throw new RealCallsDisabledError(provider);
+  const blockers = realCallBlockers(model, enabled).filter((b) => !b.includes('REAL_CALLS_ENABLED'));
+  if (blockers.length) throw new ProviderError('invalid-request', `Appel refusé avant envoi : ${blockers.join(' ; ')}`, false);
+  if (!apiKeyConfigured(model.provider === 'anthropic' ? 'anthropic' : 'openai', env)) {
+    throw new ProviderError('auth', 'Clé API absente de l’environnement : appel refusé avant envoi', false);
+  }
+}
+
 export class AnthropicAdapter implements AIAdapter {
   readonly real = true;
-  constructor(readonly model: ModelConfig) {}
+  constructor(
+    readonly model: ModelConfig,
+    private readonly clientFactory?: () => Promise<MessagesClient>,
+    private readonly enabled: boolean = REAL_CALLS_ENABLED,
+    private readonly env: NodeJS.ProcessEnv = process.env,
+  ) {}
+
+  private async client(): Promise<MessagesClient> {
+    if (this.clientFactory) return this.clientFactory();
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    // La clé est lue ici, au moment de l'appel, uniquement depuis l'environnement ; elle n'est jamais stockée ni journalisée.
+    return new Anthropic({ apiKey: this.env.ANTHROPIC_API_KEY, ...SDK_OPTIONS }) as unknown as MessagesClient;
+  }
+
   async analyze(req: AnalysisRequest): Promise<AnalysisResponse> {
-    buildAnthropicParams(this.model, req); // la requête est construite (et testée) mais jamais envoyée
-    throw new RealCallsDisabledError('anthropic');
+    const params = buildAnthropicParams(this.model, req);
+    assertEnabled(this.enabled, 'anthropic', this.model, this.env);
+    const client = await this.client();
+    let res: any;
+    try {
+      res = await client.messages.create(params);
+    } catch (e) {
+      throw classifySdkError(e);
+    }
+    const usage = res?.usage ? normalizeAnthropicUsage(res.usage) : null;
+    if (res?.stop_reason === 'refusal') throw new ProviderError('refusal', 'Refus du modèle (stop_reason = refusal)', true, usage);
+    const rawText = (res?.content ?? []).filter((b: any) => b?.type === 'text').map((b: any) => String(b.text)).join('');
+    return { rawText, usage, stopReason: res?.stop_reason ?? null, rawUsage: numericOnly(res?.usage) };
   }
 }
 
 export class OpenAIAdapter implements AIAdapter {
   readonly real = true;
-  constructor(readonly model: ModelConfig) {}
+  constructor(
+    readonly model: ModelConfig,
+    private readonly clientFactory?: () => Promise<ResponsesClient>,
+    private readonly enabled: boolean = REAL_CALLS_ENABLED,
+    private readonly env: NodeJS.ProcessEnv = process.env,
+  ) {}
+
+  private async client(): Promise<ResponsesClient> {
+    if (this.clientFactory) return this.clientFactory();
+    const { default: OpenAI } = await import('openai');
+    return new OpenAI({ apiKey: this.env.OPENAI_API_KEY, ...SDK_OPTIONS }) as unknown as ResponsesClient;
+  }
+
   async analyze(req: AnalysisRequest): Promise<AnalysisResponse> {
-    buildOpenAIParams(this.model, req);
-    throw new RealCallsDisabledError('openai');
+    const params = buildOpenAIParams(this.model, req);
+    assertEnabled(this.enabled, 'openai', this.model, this.env);
+    const client = await this.client();
+    let res: any;
+    try {
+      res = await client.responses.create(params);
+    } catch (e) {
+      throw classifySdkError(e);
+    }
+    const usage = res?.usage ? normalizeOpenAIUsage(res.usage) : null;
+    const refusal = (res?.output ?? []).some((o: any) => (o?.content ?? []).some((c: any) => c?.type === 'refusal'));
+    if (refusal) throw new ProviderError('refusal', 'Refus du modèle (contenu « refusal »)', true, usage);
+    // status « incomplete » (plafond de sortie atteint) : sortie tronquée, facturée → validée puis rejetée par le pipeline.
+    return { rawText: String(res?.output_text ?? ''), usage, stopReason: res?.status ?? null, rawUsage: numericOnly(res?.usage) };
   }
 }
 
 /** Raisons empêchant tout appel réel pour un modèle (en plus de REAL_CALLS_ENABLED). */
-export function realCallBlockers(model: ModelConfig): string[] {
+export function realCallBlockers(model: ModelConfig, enabled: boolean = REAL_CALLS_ENABLED): string[] {
   const b: string[] = [];
-  if (!REAL_CALLS_ENABLED) b.push('Appels réels désactivés en phase A (REAL_CALLS_ENABLED = false)');
+  if (!enabled) b.push('Appels réels désactivés en phase A (REAL_CALLS_ENABLED = false)');
   if (model.provider === 'mock') b.push('Modèle simulé');
   if (model.validation.status !== 'validated') b.push(`Configuration non validée : ${model.validation.blockers.join(' ; ')}`);
   if (!model.pricing) b.push('Tarif non vérifié');
@@ -125,4 +214,18 @@ export function normalizeOpenAIUsage(u: {
     outputTokens: u.output_tokens,
     reasoningTokens: u.output_tokens_details?.reasoning_tokens,
   };
+}
+
+/** Conserve uniquement les compteurs numériques (récursivement) d'un objet d'usage fournisseur. */
+export function numericOnly(u: unknown): Record<string, unknown> | null {
+  if (!u || typeof u !== 'object') return null;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(u as Record<string, unknown>)) {
+    if (typeof v === 'number') out[k] = v;
+    else if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const n = numericOnly(v);
+      if (n && Object.keys(n).length) out[k] = n;
+    }
+  }
+  return out;
 }

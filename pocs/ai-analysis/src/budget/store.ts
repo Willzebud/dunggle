@@ -11,6 +11,8 @@ export interface Reservation {
   month: string;
   day: string;
   createdAt: string;
+  /** Clé d'idempotence de l'analyse couverte par cette réservation. */
+  idempotencyKey?: string;
 }
 
 /** Appel envoyé dont la facturation réelle est inconnue : compté au maximum tant qu'il n'est pas réconcilié. */
@@ -38,9 +40,26 @@ export interface LedgerState {
   reservations: Record<string, Reservation>;
   /** Appels à facturation incertaine, jamais libérés : seule une réconciliation explicite peut les solder. */
   uncertain: Record<string, UncertainEntry>;
+  /**
+   * Registre d'idempotence : une analyse (modèle × publication × version du prompt) ne peut être réservée
+   * qu'une fois. in-progress → completed | uncertain ; supprimée seulement si la requête n'a certainement pas été facturée.
+   */
+  analyses: Record<string, AnalysisEntry>;
+  /** Nombre total de réservations jamais faites (monotone) : détecte un registre restauré ou réinitialisé. */
+  sequence: number;
 }
 
-export const emptyState = (): LedgerState => ({ version: 1, months: {}, days: {}, trial: { spentEur: 0, reservedEur: 0 }, reservations: {}, uncertain: {} });
+export interface AnalysisEntry {
+  status: 'in-progress' | 'completed' | 'uncertain';
+  reservationId: string;
+  modelKey: string;
+  since: string;
+  costEur?: number;
+  /** Résultat enregistré après validation (absent si le processus s'est arrêté avant la sauvegarde). */
+  result?: unknown;
+}
+
+export const emptyState = (): LedgerState => ({ version: 1, months: {}, days: {}, trial: { spentEur: 0, reservedEur: 0 }, reservations: {}, uncertain: {}, analyses: {}, sequence: 0 });
 
 /**
  * Stockage du registre budgétaire. `transaction` exécute `fn` de manière exclusive :
@@ -71,6 +90,8 @@ export class MemoryBudgetStore implements BudgetStore {
   private mutex = new Mutex();
   constructor(initial: LedgerState = emptyState()) {
     this.state = structuredClone(initial);
+    this.state.analyses ??= {};
+    this.state.sequence ??= 0;
   }
   transaction<T>(fn: (state: LedgerState) => T): Promise<T> {
     return this.mutex.run(async () => {
@@ -124,6 +145,8 @@ export class FileBudgetStore implements BudgetStore {
       const s = JSON.parse(await readFile(this.path, 'utf8')) as LedgerState;
       if (s.version !== 1) throw new Error(`Version de registre inconnue : ${s.version}`);
       s.uncertain ??= {}; // registres créés avant la phase A.1
+      s.analyses ??= {}; // registres créés avant la phase B.0
+      s.sequence ??= Object.keys(s.reservations).length;
       return s;
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code === 'ENOENT') return emptyState();

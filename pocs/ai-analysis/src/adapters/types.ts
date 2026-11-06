@@ -21,6 +21,8 @@ export interface AnalysisResponse {
   /** Usage réel facturé ; null si le fournisseur ne l'a pas renvoyé. */
   usage: ProviderUsage | null;
   stopReason: string | null;
+  /** Usage brut du fournisseur (compteurs numériques uniquement : cache, raisonnement), pour vérification. */
+  rawUsage?: Record<string, unknown> | null;
 }
 
 export type ProviderErrorKind = 'rate-limit' | 'server' | 'timeout' | 'network' | 'auth' | 'invalid-request' | 'refusal' | 'truncated';

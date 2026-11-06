@@ -103,7 +103,9 @@ test('code source : aucun appel réseau ni SDK fournisseur dans le POC (phase A)
   for (const f of files) {
     const src = readFileSync(f, 'utf8');
     assert.ok(!/\bfetch\s*\(/.test(src), `${f} : fetch interdit`);
-    assert.ok(!/from ['"](@anthropic-ai\/sdk|openai|node:https?|undici|axios)/.test(src), `${f} : client réseau interdit`);
+    assert.ok(!/from ['"](@anthropic-ai\/sdk|openai|node:https?|undici|axios)/.test(src), `${f} : import statique d’un client réseau interdit`);
+    // Les SDK officiels ne sont chargés (import dynamique) que dans src/adapters/real.ts, derrière les contrôles d'activation.
+    if (/import\(['"](@anthropic-ai\/sdk|openai)['"]\)/.test(src)) assert.ok(f.endsWith(join('adapters', 'real.ts')), `${f} : SDK fournisseur hors de l’adaptateur`);
   }
 });
 

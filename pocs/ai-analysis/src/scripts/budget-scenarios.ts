@@ -57,11 +57,23 @@ const codeOf = async (p: Promise<unknown>) => p.then(() => 'accepté', (e) => (e
   const r = await g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 3000 });
   const charged = await g.markUncertain(r.id, 'timeout sans usage');
   check('Timeout après envoi, usage inconnu', `facturé au maximum (${r.estimatedMaxEur} €), marqué incertain`, `${charged} €, incertain ${(await g.snapshot()).months['2026-11'].uncertainEur} €`, charged === r.estimatedMaxEur);
+  const next = await codeOf(g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 3000 }));
+  check('Nouvelle analyse alors qu’un coût est incertain', 'refus uncertain-pending (arrêt sécurisé)', next, next === 'refus uncertain-pending');
+  const rel = await codeOf(g.release(r.id, 'tentative de libération d’un coût incertain'));
+  check('Libérer un coût incertain', 'refus unknown-reservation (jamais libéré)', rel, rel === 'refus unknown-reservation');
+  await g.resolveUncertain(r.id, { inputTokens: 2000, outputTokens: 200 });
+  const after = await codeOf(g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 3000 }));
+  check('Après réconciliation manuelle du coût incertain', 'accepté', after, after === 'accepté');
+}
+{
+  const g = new BudgetGuard(new MemoryBudgetStore(), L(), undefined, now);
   const r2 = await g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 3000 });
   const actual = await g.reconcile(r2.id, { inputTokens: 2400, outputTokens: 300 });
   check('Réconciliation (2 400 entrée / 300 sortie, Haiku 5.5)', '0,00039 € (= (2400×0,10 + 300×0,50)/1e6)', `${actual} €`, actual === 0.00039);
-  const rel = await codeOf(g.release(r.id, 'tentative de libération d’un coût incertain'));
-  check('Libérer un coût incertain', 'refus unknown-reservation (jamais libéré)', rel, rel === 'refus unknown-reservation');
+  const key = 'anthropic-haiku-5-5|test|v';
+  await g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 3000, idempotencyKey: key });
+  const dup = await codeOf(g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 3000, idempotencyKey: key }));
+  check('Même analyse réservée deux fois (doublon, relance, scheduler)', 'refus duplicate-analysis', dup, dup === 'refus duplicate-analysis');
 }
 // 5. Dette : coût réel supérieur à l'estimation
 {

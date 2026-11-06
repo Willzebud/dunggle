@@ -143,14 +143,14 @@ test('mois civils : une réservation de fin de mois est imputée à son mois ; l
 test('persistance : le registre survit à un redémarrage (nouvelle instance)', async () => {
   const dir = await tmp();
   try {
-    const g1 = createPersistentGuard(L({ trialTotalCapEur: 0.01 }), `${dir}/`);
+    const g1 = await createPersistentGuard(L({ trialTotalCapEur: 0.01 }), `${dir}/`);
     const r = await g1.reserve({ modelKey: 'mock-cheap', inputTokensEstimate: 100 });
     await g1.markUncertain(r.id, 'interruption simulée');
-    const g2 = createPersistentGuard(L({ trialTotalCapEur: 0.01 }), `${dir}/`); // « redémarrage »
+    const g2 = await createPersistentGuard(L({ trialTotalCapEur: 0.01 }), `${dir}/`); // « redémarrage »
     const s = await g2.snapshot();
     assert.ok(s.uncertain[r.id]);
     assert.equal(s.trial.spentEur, r.estimatedMaxEur);
-    await assert.rejects(g2.reserve({ modelKey: 'mock-cheap', inputTokensEstimate: 100 }), (e) => code(e) === 'trial-cap');
+    await assert.rejects(g2.reserve({ modelKey: 'mock-cheap', inputTokensEstimate: 100 }), (e) => code(e) === 'uncertain-pending', 'coût incertain persistant : arrêt sécurisé après redémarrage');
     const log = (await readFile(`${dir}/usage-log.jsonl`, 'utf8')).trim().split('\n');
     assert.ok(log.length >= 2);
   } finally {

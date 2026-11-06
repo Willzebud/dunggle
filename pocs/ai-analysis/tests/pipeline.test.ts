@@ -42,7 +42,7 @@ test('metadata-only (source réelle) : aucun texte transmis, résumé du modèle
   const real = byId(evaluationSet.items.find((p) => p.sourceId === 'mit-tech-review' && !p.editorial)!.id);
   const r = await analyzePublication({ ...real, text: 'Texte intégral présent localement mais non autorisé.' }, { adapter, guard: guard() });
   const sent = JSON.parse(adapter.calls[0].user);
-  assert.equal(sent.text, null);
+  assert.equal(sent.untrustedPublication.text, null);
   assert.equal(sent.contentProvided, 'metadata');
   assert.ok(!adapter.calls[0].user.includes('Texte intégral présent localement'));
   assert.equal(r.analysis!.summary, null);
@@ -61,7 +61,7 @@ test('FULL autorisé : texte transmis et résumé conservé s’il est fondé su
   const adapter = ok({ summary: 'OrionVision est un modèle multimodal de 7 milliards de paramètres sous licence Apache-2.0, avec un score de 81,4 sur BenchX.', keyPoints: ['Poids ouverts'] });
   const r = await analyzePublication(fixture, { adapter, guard: guard() });
   assert.equal(r.inputMode, 'full');
-  assert.ok(JSON.parse(adapter.calls[0].user).text.includes('Apache-2.0'));
+  assert.ok(JSON.parse(adapter.calls[0].user).untrustedPublication.text.includes('Apache-2.0'));
   assert.ok(r.analysis!.summary);
   assert.deepEqual(r.violations, []);
 });

@@ -2,7 +2,8 @@ import { BudgetRefusedError, type BudgetGuard } from './budget/guard.js';
 import { ProviderError, RealCallsDisabledError, type AIAdapter } from './adapters/types.js';
 import { resolveInput, type ResolvedInput } from './content-policy.js';
 import { coverageFor, type CoveragePolicy } from './config/coverage.js';
-import { buildPrompt } from './prompt.js';
+import { buildPrompt, PROMPT_VERSION, SYSTEM_PROMPT } from './prompt.js';
+import { redactSecrets } from './security/redact.js';
 import { ANALYSIS_JSON_SCHEMA, validateAnalysis } from './schema.js';
 import type { AnalysisOutput, AnalysisRecord, AnalysisStatus, PublicationInput, Section } from './types.js';
 
@@ -12,6 +13,11 @@ export interface PipelineDeps {
   scope?: 'trial' | 'operational';
   /** Analyser aussi les publications exclues par une règle éditoriale (récupération). Défaut : non. */
   analyzeEditorialExcluded?: boolean;
+}
+
+/** Clé d'idempotence : une analyse = un modèle × une publication × une version du protocole. */
+export function analysisKey(modelKey: string, publicationId: string): string {
+  return `${modelKey}|${publicationId}|${PROMPT_VERSION}`;
 }
 
 /** Statuts pour lesquels la publication n'a pas pu être analysée (elle reste conservée). */
@@ -56,22 +62,32 @@ export async function analyzePublication(pub: PublicationInput, deps: PipelineDe
   const prompt = buildPrompt(pub, input);
   const maxOut = deps.guard.limits.maxOutputTokensPerRequest;
 
-  // 3. Réservation du coût MAXIMAL avant l'appel.
+  // 3. Réservation du coût MAXIMAL avant l'appel, avec revendication atomique de l'analyse (idempotence).
+  const key = analysisKey(deps.adapter.model.key, pub.id);
   let reservationId: string;
   try {
-    reservationId = (await deps.guard.reserve({ modelKey: deps.adapter.model.key, inputTokensEstimate: prompt.inputTokensUpperBound, maxOutputTokens: maxOut, scope: deps.scope ?? 'trial' })).id;
+    reservationId = (await deps.guard.reserve({ modelKey: deps.adapter.model.key, inputTokensEstimate: prompt.inputTokensUpperBound, maxOutputTokens: maxOut, scope: deps.scope ?? 'trial', idempotencyKey: key })).id;
   } catch (e) {
     if (e instanceof BudgetRefusedError) {
+      if (e.code === 'duplicate-analysis') return { ...rec, status: 'skipped-duplicate', error: e.message };
       return unanalyzed({ ...rec, status: e.code === 'unknown-pricing' ? 'refused-unknown-pricing' : 'refused-budget', error: `${e.code} : ${e.message}` });
     }
     throw e;
   }
+  const finish = async (r: AnalysisRecord): Promise<AnalysisRecord> => {
+    const safe = r.error ? { ...r, error: redactSecrets(r.error) } : r;
+    // Résultat attaché à l'analyse (sauf si la réservation a été libérée : la clé n'existe plus).
+    if (await deps.guard.getAnalysis(key)) await deps.guard.recordResult(key, safe);
+    return safe;
+  };
 
   // 4. Appel et comptabilité.
   let rawText: string;
   try {
     const res = await deps.adapter.analyze({ system: prompt.system, user: prompt.user, schema: ANALYSIS_JSON_SCHEMA, maxOutputTokens: maxOut });
     rawText = res.rawText;
+    rec.usage = { billable: res.usage, raw: res.rawUsage ?? null };
+    rec.stopReason = res.stopReason;
     if (res.usage) rec.costEur = await deps.guard.reconcile(reservationId, res.usage);
     else {
       rec.costEur = await deps.guard.markUncertain(reservationId, 'usage absent de la réponse');
@@ -80,7 +96,7 @@ export async function analyzePublication(pub: PublicationInput, deps: PipelineDe
   } catch (e) {
     if (e instanceof RealCallsDisabledError) {
       await deps.guard.release(reservationId, e.message);
-      return unanalyzed({ ...rec, status: 'provider-error', costEur: 0, error: e.message });
+      return finish(unanalyzed({ ...rec, status: 'provider-error', costEur: 0, error: e.message }));
     }
     if (e instanceof ProviderError) {
       if (!e.requestSent) {
@@ -92,21 +108,21 @@ export async function analyzePublication(pub: PublicationInput, deps: PipelineDe
         rec.costEur = await deps.guard.markUncertain(reservationId, `${e.kind} : ${e.message}`);
         rec.costUncertain = true;
       }
-      return unanalyzed({ ...rec, status: 'provider-error', error: `${e.kind} : ${e.message}` });
+      return finish(unanalyzed({ ...rec, status: 'provider-error', error: `${e.kind} : ${e.message}` }));
     }
     rec.costEur = await deps.guard.markUncertain(reservationId, `erreur inattendue : ${(e as Error).message}`);
-    return unanalyzed({ ...rec, status: 'provider-error', costUncertain: true, error: (e as Error).message });
+    return finish(unanalyzed({ ...rec, status: 'provider-error', costUncertain: true, error: (e as Error).message }));
   }
 
   // 5. Validation stricte de la sortie.
   const v = validateAnalysis(rawText);
-  if (!v.ok || !v.value) return unanalyzed({ ...rec, status: 'invalid-output', error: v.errors.join(' ; ') });
+  if (!v.ok || !v.value) return finish(unanalyzed({ ...rec, status: 'invalid-output', error: v.errors.join(' ; ') }));
 
   // 6. Règles de contenu, placement, puis suppression des résumés inutiles.
   const content = enforceContentRules(pub, input, v.value);
   const placed = computeSection(pub, content.analysis, coverage);
   const final = dropSummaryIfExcluded(placed.section, placed.analysis);
-  return { ...rec, analysis: final.analysis, section: placed.section, violations: [...content.violations, ...placed.violations, ...final.violations] };
+  return finish({ ...rec, analysis: final.analysis, section: placed.section, violations: [...content.violations, ...placed.violations, ...final.violations] });
 }
 
 /** Applique les règles de contenu à la sortie du modèle (corrige et trace ; ne fait jamais confiance au modèle). */
@@ -124,6 +140,22 @@ export function enforceContentRules(pub: PublicationInput, input: ResolvedInput,
     violations.push('summary-longer-than-excerpt');
     out.summary = null;
     out.keyPoints = [];
+  }
+  // Injection : fuite des consignes système ou URL absente de la publication (ex. « contacte https://… »).
+  const generated = `${out.summary ?? ''} ${out.keyPoints.join(' ')} ${out.relevanceReason}`;
+  const sourceAll = `${pub.title} ${pub.url} ${input.text ?? ''}`;
+  if (leaksSystemPrompt(generated)) {
+    violations.push('possible-system-prompt-leak');
+    out.summary = null;
+    out.keyPoints = [];
+    out.relevanceReason = '[raison supprimée : reprise possible des consignes système]';
+  }
+  const foreignUrls = (generated.match(/https?:\/\/[^\s)"'<>]+/g) ?? []).filter((u) => !sourceAll.includes(u.replace(/[.,;]+$/, '')));
+  if (foreignUrls.length) {
+    violations.push(`ungrounded-url (${foreignUrls.length})`);
+    out.summary = null;
+    out.keyPoints = [];
+    out.relevanceReason = out.relevanceReason.replace(/https?:\/\/[^\s)"'<>]+/g, '[URL supprimée]');
   }
   if (out.summary || out.keyPoints.length) {
     const source = `${pub.title} ${input.text ?? ''}`;
@@ -181,4 +213,14 @@ export function computeSection(
 export function dropSummaryIfExcluded(section: Section, a: AnalysisOutput): { analysis: AnalysisOutput; violations: string[] } {
   if (section !== 'excluded' || (a.summary === null && a.keyPoints.length === 0)) return { analysis: a, violations: [] };
   return { analysis: { ...a, summary: null, keyPoints: [] }, violations: ['summary-on-excluded-dropped'] };
+}
+
+/** Détecte la reprise d'un passage des consignes système (fenêtre glissante de 50 caractères). */
+export function leaksSystemPrompt(text: string, window = 50): boolean {
+  const norm = (x: string) => x.replace(/\s+/g, ' ').toLowerCase();
+  const t = norm(text);
+  const sys = norm(SYSTEM_PROMPT);
+  if (t.length < window) return false;
+  for (let i = 0; i + window <= sys.length; i += 25) if (t.includes(sys.slice(i, i + window))) return true;
+  return false;
 }

@@ -51,6 +51,8 @@ npm install
 | `npm run poc2:test` | Tests du POC 2 seuls (schéma, politiques de contenu, budget, concurrence, erreurs fournisseur) |
 | `npm run poc2:prepare` | POC 2 : prépare l’évaluation (modes envoyés, coûts maximaux, mesure du préfiltre), sans appel |
 | `npm run poc2:budget` | POC 2 : exécute les scénarios budgétaires et génère leur rapport |
+| `npm run poc2:evaluate` | POC 2 : exécuteur de la phase B, en **simulation par défaut** (plan, coût maximal, prérequis manquants). Appels réels verrouillés : voir `pocs/ai-analysis/reports/phase-b-security-audit.md` |
+| `npm run check:secrets` | Recherche de secrets et de fichiers sensibles dans les fichiers suivis par Git (à lancer avant chaque commit) |
 | `npm run poc:sources` | POC 1 : teste les 17 sources (un passage, environ 30 requêtes) et génère les rapports de faisabilité |
 | `npm run poc:extraction` | POC 1.1 : extrait le contenu de 6 pages et vérifie un lien par source (environ 21 pages). Nécessite d'avoir lancé `poc:sources` avant |
 | `npm run poc:candidates` | POC 1.2 : re-teste les sources candidates (**requêtes réseau**) |
@@ -69,6 +71,7 @@ Les commandes réseau font un passage unique et séquentiel. Ne les lancez pas e
 | **POC 1.2** : élargissement ciblé des sources | ✅ Terminé | 8 candidates et 2 variantes testées ; 5 retenues et **intégrées à la configuration** (17 sources) ; règles éditoriales ciblées (« The Download » exclu avec trace, « Video Friday » marqué) ; taxonomie du POC 2 documentée |
 | **POC 2 — phase A** : préparation de l’analyse IA | ✅ Terminée | Politiques de contenu (17 sources en `metadata-only`), schéma validé, adaptateurs Anthropic/OpenAI désactivés et simulés, garde budgétaire (10 € / 8 € / 0,50 €), jeu d’évaluation de 39 publications. **Aucun appel réel** |
 | **POC 2 — phase A.1** : fiabilisation du protocole | ✅ Terminée | Préfiltre évalué sur 3 statuts (must_keep / must_exclude / ambiguous), couverture obligatoire par source, résumés non produits pour les exclusions, grille de revue manuelle, budget audité (borne haute, coûts incertains, dette, mois civils, redémarrage, interruption) |
+| **POC 2 — phase B.0** : sécurisation des dépenses | ✅ Terminée | Idempotence, arrêt sur coût incertain, intégrité du registre, masquage des secrets, protection contre l’injection, adaptateurs SDK verrouillés, exécuteur `evaluate:real` ; smoke tests préparés (coût maximal 0,003 €), non exécutés |
 | **POC 2 — phase B** : essais réels | ⏳ À valider | Sous budget d’essai de 0,50 €, après validation des points listés dans `pocs/ai-analysis/README.md` |
 
 Rapports détaillés : `pocs/veille-feasibility/results/` (index dans [`docs/README.md`](docs/README.md)).

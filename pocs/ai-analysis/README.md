@@ -20,12 +20,22 @@ npm run poc2:budget      # reports/budget-scenarios.md
 npm run typecheck        # tous les workspaces
 ```
 
-Ou depuis ce dossier : `npm test`, `npm run prepare:eval`, `npm run budget:scenarios`, `npm run typecheck`.
+Ou depuis ce dossier : `npm test`, `npm run prepare:eval`, `npm run budget:scenarios`, `npm run evaluate:real`, `npm run check:secrets`, `npm run typecheck`.
+
+### Exécuteur de la phase B (`npm run evaluate:real`)
+
+```bash
+npm run evaluate:real                                   # simulation du smoke test (défaut, aucun appel)
+npm run evaluate:real -- --mode=full --dry-run          # simulation de l’évaluation complète
+npm run evaluate:real -- --model=anthropic-haiku-5-5 --real --confirm-max-eur=0.002   # réel : BLOQUÉ en B.0
+```
+
+Options autorisées : `--model=<clé>|all`, `--mode=smoke|full`, `--dry-run`, `--real`, `--confirm-max-eur=<€ ≤ 0,50>`, `--max-calls=<n>` (abaisse seulement le plafond). Toute autre option est refusée. Un appel réel exige les 7 verrous décrits dans `reports/phase-b-security-audit.md` § 8. Les analyses déjà terminées ou incertaines ne sont jamais refacturées lors d’une reprise.
 
 ## Garanties de la phase A
 
-- `REAL_CALLS_ENABLED = false` est **figé dans le code** et n’est pas pilotable par variable d’environnement. Les adaptateurs réels construisent les paramètres de requête, puis lèvent `RealCallsDisabledError`.
-- Le POC ne contient aucun `fetch` ni client réseau ou SDK fournisseur. Un test le vérifie dans le code source, et tous les tests remplacent `fetch` par une fonction qui échoue.
+- `REAL_CALLS_ENABLED = false` est **figé dans le code** et n’est pas pilotable par variable d’environnement. Les adaptateurs réels (SDK officiels, `maxRetries: 0`) lèvent `RealCallsDisabledError` avant tout envoi.
+- Aucun `fetch` dans le POC ; les SDK fournisseurs ne sont chargés (import dynamique) que dans `src/adapters/real.ts`, derrière les verrous. Un test le vérifie, et tous les tests remplacent `fetch` par une fonction qui échoue.
 - Les clés API proviendraient des variables d’environnement (voir `.env.example`). Elles ne sont ni lues ni affichées en phase A, seule leur présence peut être testée.
 - L’état budgétaire et les journaux locaux vont dans `var/`, qui est ignoré par Git.
 
@@ -94,6 +104,7 @@ La comptabilité interne reste une estimation : il faut aussi configurer des pla
 - `reports/content-policy.md` : politiques par source et restrictions non résolues.
 - `reports/evaluation-readiness.md` : jeu d’évaluation, modes envoyés, coûts maximaux, mesure du préfiltre (généré).
 - `reports/budget-scenarios.md` : scénarios budgétaires exécutés et projections (généré).
+- `reports/phase-b-security-audit.md` : audit de sécurité des dépenses (phase B.0), protections fournisseurs, prérequis et plan des smoke tests.
 - `reports/budget-audit.md` : audit de la protection budgétaire, limites et protections à configurer chez les fournisseurs.
 - `reports/evaluation-dataset-quality.md` : composition et cohérence du jeu d’évaluation (généré).
 - `reports/summary-evaluation-grid.md` : grille d’évaluation des résumés et limites de l’appel unique.
