@@ -1,0 +1,22 @@
+{
+  "name": "dunggle",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dunggle — application de veille technologique (Angular, IA, Agents IA)",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "pocs/*"
+  ],
+  "scripts": {
+    "poc:sources": "npm run test:sources -w @dunggle/veille-feasibility",
+    "poc:extraction": "npm run test:content -w @dunggle/veille-feasibility",
+    "poc:all": "npm run poc:sources && npm run poc:extraction",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "poc:candidates": "npm run test:candidates -w @dunggle/veille-feasibility --",
+    "test": "npm run test:unit -w @dunggle/veille-feasibility",
+    "poc:candidates:offline": "npm run test:candidates -w @dunggle/veille-feasibility -- --offline"
+  }
+}

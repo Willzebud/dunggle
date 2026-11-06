@@ -1,0 +1,27 @@
+{
+  "name": "@dunggle/veille-feasibility",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dunggle — POC 1 et 1.1 : faisabilité de la collecte de sources et extraction de contenu",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test:sources": "tsx src/test-sources.ts",
+    "typecheck": "tsc --noEmit",
+    "test:content": "tsx src/test-content.ts",
+    "test:candidates": "tsx src/poc-1-2/test-candidates.ts",
+    "test:unit": "tsx --test \"src/tests/*.test.ts\""
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "linkedom": "^0.18.15",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

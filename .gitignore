@@ -1,0 +1,51 @@
+# Dépendances
+node_modules/
+
+# Variables d'environnement et secrets (les .env.example restent suivis)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Sorties de compilation
+dist/
+build/
+out-tsc/
+*.tsbuildinfo
+.angular/
+coverage/
+
+# Fichiers temporaires et journaux
+tmp/
+.tmp/
+*.log
+npm-debug.log*
+
+# Systèmes et éditeurs
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Fichiers temporaires supplémentaires
+*.tmp
+*.swp
+*~
+.cache/
+
+# --- Données brutes de collecte des POC ---
+# Elles contiennent des extraits de contenus tiers (descriptions jusqu'à 500 caractères, aperçus de pages)
+# dont la réutilisation n'est pas autorisée (voir docs/content-reuse.md). Elles se régénèrent localement :
+# voir pocs/veille-feasibility/results/README.md. Les rapports de synthèse et les JSON de métadonnées
+# (sources-report.json, editorial-grid.json, manual-review.json) restent suivis.
+pocs/veille-feasibility/results/articles.json
+pocs/veille-feasibility/results/content-extraction.json
+pocs/veille-feasibility/results/poc-1.2/candidates-raw.json
+pocs/veille-feasibility/results/archive/**/articles.json
+pocs/veille-feasibility/results/archive/**/content-extraction.json
+pocs/veille-feasibility/results/archive/**/candidates-raw.json
+
+# --- POC 2 : état budgétaire, journaux d'usage et sorties locales ---
+pocs/ai-analysis/var/

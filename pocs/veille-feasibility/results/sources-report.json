@@ -1,0 +1,1402 @@
+{
+  "meta": {
+    "startedAt": "2026-11-06T13:24:13.024Z",
+    "finishedAt": "2026-11-06T13:24:34.116Z",
+    "nodeVersion": "v22.23.2",
+    "totalRequests": 29,
+    "userAgent": "VeilleTechPOC/0.1 (feasibility study; low-volume, single-run; Node.js fetch)",
+    "githubTokenUsed": false,
+    "settings": {
+      "maxArticlesPerSource": 10,
+      "timeoutMs": 15000,
+      "delayBetweenRequestsMs": 750,
+      "maxBodyBytes": 5242880,
+      "userAgent": "VeilleTechPOC/0.1 (feasibility study; low-volume, single-run; Node.js fetch)",
+      "activeDays": 30,
+      "lowActivityDays": 90,
+      "contentSufficientChars": 300,
+      "contentLimitedChars": 80
+    }
+  },
+  "sources": [
+    {
+      "source": {
+        "id": "angular-blog",
+        "name": "Angular Blog",
+        "category": "angular",
+        "type": "feed-discovery",
+        "url": "https://blog.angular.dev/"
+      },
+      "effectiveUrl": "https://blog.angular.dev/feed",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://blog.angular.dev/",
+          "finalUrl": "https://blog.angular.dev/",
+          "status": 403,
+          "redirected": false,
+          "contentType": "text/html; charset=UTF-8",
+          "bytes": 5609,
+          "durationMs": 352,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": false,
+            "cacheControl": null
+          }
+        },
+        {
+          "requestedUrl": "https://blog.angular.dev/feed",
+          "finalUrl": "https://blog.angular.dev/feed",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/xml; charset=UTF-8",
+          "bytes": 61172,
+          "durationMs": 362,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": false,
+            "cacheControl": "private, must-revalidate, max-age=900"
+          }
+        },
+        {
+          "requestedUrl": "https://blog.angular.dev/robots.txt",
+          "finalUrl": "https://blog.angular.dev/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain",
+          "bytes": 890,
+          "durationMs": 98,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": true,
+            "cacheControl": "public, max-age=7200"
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; aucune règle ne bloque ce chemin",
+        "aiCrawlersDisallowed": [
+          "GPTBot",
+          "ClaudeBot",
+          "Applebot-Extended",
+          "Bytespider",
+          "meta-externalagent",
+          "Amazonbot"
+        ]
+      },
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-10-23T14:58:56.000Z",
+      "oldestCollected": "2026-07-07T15:47:29.000Z",
+      "errors": [],
+      "warnings": [
+        "Page d'accueil inaccessible pour la découverte (403)",
+        "Test des chemins conventionnels : /feed, /rss.xml, /feed.xml"
+      ],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 13,
+        "content": "suffisant",
+        "medianContentLength": 3159,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [
+          "Page d'accueil inaccessible pour la découverte (403)",
+          "Ni ETag ni Last-Modified : pas de requête conditionnelle possible"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.06666666666666667,
+        "estimationMethod": "2 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 10 éléments)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 10,
+          "PARTIAL": 0,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "gh-angular",
+        "name": "GitHub angular/angular",
+        "category": "angular",
+        "type": "github-releases",
+        "url": "https://api.github.com/repos/angular/angular/releases"
+      },
+      "effectiveUrl": "https://api.github.com/repos/angular/angular/releases?per_page=10",
+      "format": "json",
+      "requests": [
+        {
+          "requestedUrl": "https://api.github.com/repos/angular/angular/releases?per_page=10",
+          "finalUrl": "https://api.github.com/repos/angular/angular/releases?per_page=10",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/json; charset=utf-8",
+          "bytes": 89708,
+          "durationMs": 552,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=60, s-maxage=60"
+          },
+          "rateLimit": {
+            "limit": 60,
+            "remaining": 57,
+            "resetAt": "2026-11-06T13:31:17.000Z"
+          }
+        }
+      ],
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-05T23:00:46.000Z",
+      "oldestCollected": "2026-10-08T17:50:06.000Z",
+      "errors": [],
+      "warnings": [
+        "4/10 releases sont des pré-versions (next/rc/beta)"
+      ],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 0,
+        "content": "suffisant",
+        "medianContentLength": 4710,
+        "authRequired": false,
+        "authNotes": "Non requise. API GitHub : 60 req/h avec la configuration actuelle (sans token : 60/h par IP, 5000/h avec token), restant 57",
+        "restrictions": [
+          "Quota API GitHub (60 req/h sans token)",
+          "4/10 releases sont des pré-versions (next/rc/beta)"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.34703675479163376,
+        "estimationMethod": "Flux tronqué : 10 publications en 28.8 j (approximation, échantillon court)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 7,
+          "PARTIAL": 3,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "gh-angular-components",
+        "name": "GitHub angular/components",
+        "category": "angular",
+        "type": "github-releases",
+        "url": "https://api.github.com/repos/angular/components/releases"
+      },
+      "effectiveUrl": "https://api.github.com/repos/angular/components/releases?per_page=10",
+      "format": "json",
+      "requests": [
+        {
+          "requestedUrl": "https://api.github.com/repos/angular/components/releases?per_page=10",
+          "finalUrl": "https://api.github.com/repos/angular/components/releases?per_page=10",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/json; charset=utf-8",
+          "bytes": 29629,
+          "durationMs": 362,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=60, s-maxage=60"
+          },
+          "rateLimit": {
+            "limit": 60,
+            "remaining": 56,
+            "resetAt": "2026-11-06T13:31:17.000Z"
+          }
+        }
+      ],
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-04T12:23:08.000Z",
+      "oldestCollected": "2026-10-07T14:59:58.000Z",
+      "errors": [],
+      "warnings": [
+        "5/10 releases sont des pré-versions (next/rc/beta)"
+      ],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 2,
+        "content": "suffisant",
+        "medianContentLength": 1044,
+        "authRequired": false,
+        "authNotes": "Non requise. API GitHub : 60 req/h avec la configuration actuelle (sans token : 60/h par IP, 5000/h avec token), restant 56",
+        "restrictions": [
+          "Quota API GitHub (60 req/h sans token)",
+          "5/10 releases sont des pré-versions (next/rc/beta)"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.33407334794485866,
+        "estimationMethod": "Flux tronqué : 10 publications en 29.9 j (approximation, échantillon court)",
+        "exploitationMode": "PARTIAL",
+        "levelDistribution": {
+          "FULL": 0,
+          "PARTIAL": 10,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "openai-news",
+        "name": "OpenAI News",
+        "category": "ia",
+        "type": "feed",
+        "url": "https://openai.com/news/rss.xml"
+      },
+      "effectiveUrl": "https://openai.com/news/rss.xml",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://openai.com/news/rss.xml",
+          "finalUrl": "https://openai.com/news/rss.xml",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/xml; charset=utf-8",
+          "bytes": 831593,
+          "durationMs": 333,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": false,
+            "cacheControl": "public, max-age=0"
+          }
+        },
+        {
+          "requestedUrl": "https://openai.com/robots.txt",
+          "finalUrl": "https://openai.com/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain; charset=utf-8",
+          "bytes": 98,
+          "durationMs": 78,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": true,
+            "cacheControl": "public, max-age=0, must-revalidate"
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; règle « Allow: / »",
+        "aiCrawlersDisallowed": []
+      },
+      "itemsInFeed": 1366,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-05T20:00:00.000Z",
+      "oldestCollected": "2026-11-04T07:00:00.000Z",
+      "errors": [],
+      "warnings": [
+        "4 publication(s) partagent un identifiant natif : identification par URL normalisée pour celles-ci"
+      ],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 0,
+        "content": "limité",
+        "medianContentLength": 150,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [
+          "Ni ETag ni Last-Modified : pas de requête conditionnelle possible",
+          "Contenu limité (médiane 150 caractères) : résumé limité au titre/extrait"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 2.8,
+        "estimationMethod": "84 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 1366 éléments)",
+        "exploitationMode": "PARTIAL",
+        "levelDistribution": {
+          "FULL": 0,
+          "PARTIAL": 10,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "deepmind-blog",
+        "name": "Google DeepMind Blog",
+        "category": "ia",
+        "type": "feed",
+        "url": "https://deepmind.google/blog/rss.xml"
+      },
+      "effectiveUrl": "https://deepmind.google/blog/rss.xml",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://deepmind.google/blog/rss.xml",
+          "finalUrl": "https://deepmind.google/blog/rss.xml",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/xml",
+          "bytes": 70178,
+          "durationMs": 323,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=60"
+          }
+        },
+        {
+          "requestedUrl": "https://deepmind.google/robots.txt",
+          "finalUrl": "https://deepmind.google/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain",
+          "bytes": 69,
+          "durationMs": 99,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=60"
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; règle « Allow: / »",
+        "aiCrawlersDisallowed": []
+      },
+      "itemsInFeed": 100,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-05T17:05:16.000Z",
+      "oldestCollected": "2026-10-13T16:01:58.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 0,
+        "content": "limité",
+        "medianContentLength": 84,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [
+          "Contenu limité (médiane 84 caractères) : résumé limité au titre/extrait"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.36666666666666664,
+        "estimationMethod": "11 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 100 éléments)",
+        "exploitationMode": "PARTIAL",
+        "levelDistribution": {
+          "FULL": 0,
+          "PARTIAL": 6,
+          "MINIMAL": 4
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "huggingface-blog",
+        "name": "Hugging Face Blog",
+        "category": "ia",
+        "type": "feed",
+        "url": "https://huggingface.co/blog/feed.xml"
+      },
+      "effectiveUrl": "https://huggingface.co/blog/feed.xml",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://huggingface.co/blog/feed.xml",
+          "finalUrl": "https://huggingface.co/blog/feed.xml",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/rss+xml; charset=utf-8",
+          "bytes": 265669,
+          "durationMs": 348,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": null
+          }
+        },
+        {
+          "requestedUrl": "https://huggingface.co/robots.txt",
+          "finalUrl": "https://huggingface.co/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain",
+          "bytes": 68,
+          "durationMs": 185,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": true,
+            "cacheControl": null
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; règle « Allow: / »",
+        "aiCrawlersDisallowed": []
+      },
+      "itemsInFeed": 899,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-06T00:00:00.000Z",
+      "oldestCollected": "2026-10-29T00:00:00.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 0,
+        "content": "insuffisant",
+        "medianContentLength": 0,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [
+          "Contenu insuffisant (médiane 0 caractères) : résumé limité au titre/extrait"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.9,
+        "estimationMethod": "27 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 899 éléments)",
+        "exploitationMode": "MINIMAL",
+        "levelDistribution": {
+          "FULL": 0,
+          "PARTIAL": 0,
+          "MINIMAL": 10
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "google-research",
+        "name": "Google Research Blog",
+        "category": "ia",
+        "type": "feed",
+        "url": "https://research.google/blog/rss/"
+      },
+      "effectiveUrl": "https://research.google/blog/rss/",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://research.google/blog/rss/",
+          "finalUrl": "https://research.google/blog/rss/",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/rss+xml; charset=utf-8",
+          "bytes": 78411,
+          "durationMs": 569,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": true,
+            "cacheControl": "max-age=1800"
+          }
+        },
+        {
+          "requestedUrl": "https://research.google/robots.txt",
+          "finalUrl": "https://research.google/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain",
+          "bytes": 68,
+          "durationMs": 171,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": false,
+            "cacheControl": "max-age=1800"
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; règle « Allow: / »",
+        "aiCrawlersDisallowed": []
+      },
+      "itemsInFeed": 100,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-05T16:01:08.000Z",
+      "oldestCollected": "2026-10-07T20:19:57.000Z",
+      "errors": [],
+      "warnings": [
+        "Le champ <description> ne contient que le nom de la catégorie, pas de résumé ni de contenu"
+      ],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 0,
+        "content": "insuffisant",
+        "medianContentLength": 15,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [
+          "Le champ <description> ne contient que le nom de la catégorie, pas de résumé ni de contenu",
+          "Contenu insuffisant (médiane 15 caractères) : résumé limité au titre/extrait"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.3333333333333333,
+        "estimationMethod": "10 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 100 éléments)",
+        "exploitationMode": "MINIMAL",
+        "levelDistribution": {
+          "FULL": 0,
+          "PARTIAL": 0,
+          "MINIMAL": 10
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "simon-willison",
+        "name": "Simon Willison",
+        "category": "agents",
+        "type": "feed",
+        "url": "https://simonwillison.net/atom/everything/"
+      },
+      "effectiveUrl": "https://simonwillison.net/atom/everything/",
+      "format": "atom",
+      "requests": [
+        {
+          "requestedUrl": "https://simonwillison.net/atom/everything/",
+          "finalUrl": "https://simonwillison.net/atom/everything/",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/xml; charset=utf-8",
+          "bytes": 119092,
+          "durationMs": 300,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": true,
+            "cacheControl": "s-maxage=600"
+          }
+        },
+        {
+          "requestedUrl": "https://simonwillison.net/robots.txt",
+          "finalUrl": "https://simonwillison.net/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain",
+          "bytes": 136,
+          "durationMs": 103,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": true,
+            "cacheControl": null
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; aucune règle ne bloque ce chemin",
+        "aiCrawlersDisallowed": []
+      },
+      "itemsInFeed": 30,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-05T17:34:03.000Z",
+      "oldestCollected": "2026-11-02T13:31:26.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 0,
+        "content": "suffisant",
+        "medianContentLength": 511,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 2.1836385349536385,
+        "estimationMethod": "Flux tronqué : 30 publications en 13.7 j (approximation, échantillon court)",
+        "exploitationMode": "PARTIAL",
+        "levelDistribution": {
+          "FULL": 3,
+          "PARTIAL": 7,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "gh-openai-agents",
+        "name": "OpenAI Agents SDK (Python)",
+        "category": "agents",
+        "type": "github-releases",
+        "url": "https://api.github.com/repos/openai/openai-agents-python/releases"
+      },
+      "effectiveUrl": "https://api.github.com/repos/openai/openai-agents-python/releases?per_page=10",
+      "format": "json",
+      "requests": [
+        {
+          "requestedUrl": "https://api.github.com/repos/openai/openai-agents-python/releases?per_page=10",
+          "finalUrl": "https://api.github.com/repos/openai/openai-agents-python/releases?per_page=10",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/json; charset=utf-8",
+          "bytes": 133163,
+          "durationMs": 541,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=60, s-maxage=60"
+          },
+          "rateLimit": {
+            "limit": 60,
+            "remaining": 55,
+            "resetAt": "2026-11-06T13:31:17.000Z"
+          }
+        }
+      ],
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-03T16:44:27.000Z",
+      "oldestCollected": "2026-08-15T02:49:37.000Z",
+      "errors": [],
+      "warnings": [
+        "1/10 releases sont des pré-versions (next/rc/beta)"
+      ],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 2,
+        "content": "suffisant",
+        "medianContentLength": 6121,
+        "authRequired": false,
+        "authNotes": "Non requise. API GitHub : 60 req/h avec la configuration actuelle (sans token : 60/h par IP, 5000/h avec token), restant 55",
+        "restrictions": [
+          "Quota API GitHub (60 req/h sans token)",
+          "1/10 releases sont des pré-versions (next/rc/beta)"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.06666666666666667,
+        "estimationMethod": "2 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 10 éléments)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 9,
+          "PARTIAL": 1,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "gh-langgraph",
+        "name": "LangGraph",
+        "category": "agents",
+        "type": "github-releases",
+        "url": "https://api.github.com/repos/langchain-ai/langgraph/releases"
+      },
+      "effectiveUrl": "https://api.github.com/repos/langchain-ai/langgraph/releases?per_page=10",
+      "format": "json",
+      "requests": [
+        {
+          "requestedUrl": "https://api.github.com/repos/langchain-ai/langgraph/releases?per_page=10",
+          "finalUrl": "https://api.github.com/repos/langchain-ai/langgraph/releases?per_page=10",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/json; charset=utf-8",
+          "bytes": 24962,
+          "durationMs": 458,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=60, s-maxage=60"
+          },
+          "rateLimit": {
+            "limit": 60,
+            "remaining": 54,
+            "resetAt": "2026-11-06T13:31:17.000Z"
+          }
+        }
+      ],
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-06T03:04:13.000Z",
+      "oldestCollected": "2026-10-26T20:04:45.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 0,
+        "content": "suffisant",
+        "medianContentLength": 403,
+        "authRequired": false,
+        "authNotes": "Non requise. API GitHub : 60 req/h avec la configuration actuelle (sans token : 60/h par IP, 5000/h avec token), restant 54",
+        "restrictions": [
+          "Quota API GitHub (60 req/h sans token)"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.9326621148322439,
+        "estimationMethod": "Flux tronqué : 10 publications en 10.7 j (approximation, échantillon court)",
+        "exploitationMode": "PARTIAL",
+        "levelDistribution": {
+          "FULL": 0,
+          "PARTIAL": 10,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "gh-mcp-ts-sdk",
+        "name": "MCP TypeScript SDK",
+        "category": "agents",
+        "type": "github-releases",
+        "url": "https://api.github.com/repos/modelcontextprotocol/typescript-sdk/releases"
+      },
+      "effectiveUrl": "https://api.github.com/repos/modelcontextprotocol/typescript-sdk/releases?per_page=10",
+      "format": "json",
+      "requests": [
+        {
+          "requestedUrl": "https://api.github.com/repos/modelcontextprotocol/typescript-sdk/releases?per_page=10",
+          "finalUrl": "https://api.github.com/repos/modelcontextprotocol/typescript-sdk/releases?per_page=10",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/json; charset=utf-8",
+          "bytes": 40790,
+          "durationMs": 419,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=60, s-maxage=60"
+          },
+          "rateLimit": {
+            "limit": 60,
+            "remaining": 53,
+            "resetAt": "2026-11-06T13:31:17.000Z"
+          }
+        }
+      ],
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-10-23T18:32:25.000Z",
+      "oldestCollected": "2026-10-05T11:42:59.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 13,
+        "content": "suffisant",
+        "medianContentLength": 1159,
+        "authRequired": false,
+        "authNotes": "Non requise. API GitHub : 60 req/h avec la configuration actuelle (sans token : 60/h par IP, 5000/h avec token), restant 53",
+        "restrictions": [
+          "Quota API GitHub (60 req/h sans token)"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.26666666666666666,
+        "estimationMethod": "8 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 10 éléments)",
+        "exploitationMode": "PARTIAL",
+        "levelDistribution": {
+          "FULL": 4,
+          "PARTIAL": 5,
+          "MINIMAL": 1
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "gh-claude-code",
+        "name": "Claude Code",
+        "category": "agents",
+        "type": "github-releases",
+        "url": "https://api.github.com/repos/anthropics/claude-code/releases"
+      },
+      "effectiveUrl": "https://api.github.com/repos/anthropics/claude-code/releases?per_page=10",
+      "format": "json",
+      "requests": [
+        {
+          "requestedUrl": "https://api.github.com/repos/anthropics/claude-code/releases?per_page=10",
+          "finalUrl": "https://api.github.com/repos/anthropics/claude-code/releases?per_page=10",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/json; charset=utf-8",
+          "bytes": 262928,
+          "durationMs": 460,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=60, s-maxage=60"
+          },
+          "rateLimit": {
+            "limit": 60,
+            "remaining": 52,
+            "resetAt": "2026-11-06T13:31:17.000Z"
+          }
+        }
+      ],
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-04T00:01:03.000Z",
+      "oldestCollected": "2026-10-21T22:17:02.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 2,
+        "content": "suffisant",
+        "medianContentLength": 10146,
+        "authRequired": false,
+        "authNotes": "Non requise. API GitHub : 60 req/h avec la configuration actuelle (sans token : 60/h par IP, 5000/h avec token), restant 52",
+        "restrictions": [
+          "Quota API GitHub (60 req/h sans token)"
+        ],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.6397890980260553,
+        "estimationMethod": "Flux tronqué : 10 publications en 15.6 j (approximation, échantillon court)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 9,
+          "PARTIAL": 0,
+          "MINIMAL": 1
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "typescript-blog",
+        "name": "TypeScript Blog (Microsoft)",
+        "category": "angular",
+        "type": "feed",
+        "url": "https://devblogs.microsoft.com/typescript/feed/"
+      },
+      "effectiveUrl": "https://devblogs.microsoft.com/typescript/feed/",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://devblogs.microsoft.com/typescript/feed/",
+          "finalUrl": "https://devblogs.microsoft.com/typescript/feed/",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/rss+xml; charset=UTF-8",
+          "bytes": 365868,
+          "durationMs": 261,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": true,
+            "cacheControl": "must-revalidate, max-age=600"
+          }
+        },
+        {
+          "requestedUrl": "https://devblogs.microsoft.com/robots.txt",
+          "finalUrl": "https://devblogs.microsoft.com/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain; charset=utf-8",
+          "bytes": 9636,
+          "durationMs": 58,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": false,
+            "cacheControl": "must-revalidate, max-age=14400"
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; aucune règle ne bloque ce chemin",
+        "aiCrawlersDisallowed": []
+      },
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-10-20T17:53:06.000Z",
+      "oldestCollected": "2025-07-25T16:53:10.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 16,
+        "content": "suffisant",
+        "medianContentLength": 23082,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.03333333333333333,
+        "estimationMethod": "1 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 10 éléments)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 10,
+          "PARTIAL": 0,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "project-zero",
+        "name": "Google Project Zero",
+        "category": "innovation",
+        "type": "feed",
+        "url": "https://projectzero.google/feed.xml",
+        "idStrategy": "normalized-url"
+      },
+      "effectiveUrl": "https://projectzero.google/feed.xml",
+      "format": "atom",
+      "requests": [
+        {
+          "requestedUrl": "https://projectzero.google/feed.xml",
+          "finalUrl": "https://projectzero.google/feed.xml",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/xml",
+          "bytes": 901883,
+          "durationMs": 435,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": true,
+            "cacheControl": "no-cache, must-revalidate"
+          }
+        },
+        {
+          "requestedUrl": "https://projectzero.google/robots.txt",
+          "finalUrl": "https://projectzero.google/robots.txt",
+          "status": 404,
+          "redirected": false,
+          "contentType": "text/html; charset=UTF-8",
+          "bytes": 1571,
+          "durationMs": 111,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": false,
+            "cacheControl": null
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "pas de robots.txt (404) : aucune restriction déclarée ; aucune règle ne bloque ce chemin",
+        "aiCrawlersDisallowed": []
+      },
+      "itemsInFeed": 10,
+      "itemsCollected": 10,
+      "latestPublication": "2026-10-27T07:00:00.000Z",
+      "oldestCollected": "2026-01-26T08:00:00.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 10,
+        "content": "suffisant",
+        "medianContentLength": 19521,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.03333333333333333,
+        "estimationMethod": "1 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 10 éléments)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 10,
+          "PARTIAL": 0,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "one-useful-thing",
+        "name": "One Useful Thing (Ethan Mollick)",
+        "category": "prospective",
+        "type": "feed",
+        "url": "https://www.oneusefulthing.org/feed"
+      },
+      "effectiveUrl": "https://www.oneusefulthing.org/feed",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://www.oneusefulthing.org/feed",
+          "finalUrl": "https://www.oneusefulthing.org/feed",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/xml; charset=utf-8",
+          "bytes": 922268,
+          "durationMs": 296,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "no-cache"
+          }
+        },
+        {
+          "requestedUrl": "https://www.oneusefulthing.org/robots.txt",
+          "finalUrl": "https://www.oneusefulthing.org/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain; charset=utf-8",
+          "bytes": 605,
+          "durationMs": 191,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=86400"
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; aucune règle ne bloque ce chemin",
+        "aiCrawlersDisallowed": []
+      },
+      "itemsInFeed": 20,
+      "itemsCollected": 10,
+      "latestPublication": "2026-10-20T15:57:59.000Z",
+      "oldestCollected": "2026-04-23T20:00:38.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 16,
+        "content": "suffisant",
+        "medianContentLength": 10563,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.03333333333333333,
+        "estimationMethod": "1 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 20 éléments)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 10,
+          "PARTIAL": 0,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "mit-tech-review",
+        "name": "MIT Technology Review",
+        "category": "prospective",
+        "type": "feed",
+        "url": "https://www.technologyreview.com/feed/"
+      },
+      "effectiveUrl": "https://www.technologyreview.com/feed/",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://www.technologyreview.com/feed/",
+          "finalUrl": "https://www.technologyreview.com/feed/",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/rss+xml; charset=UTF-8",
+          "bytes": 103341,
+          "durationMs": 155,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": true,
+            "cacheControl": "max-age=300, must-revalidate"
+          }
+        },
+        {
+          "requestedUrl": "https://www.technologyreview.com/robots.txt",
+          "finalUrl": "https://www.technologyreview.com/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain; charset=utf-8",
+          "bytes": 1920,
+          "durationMs": 52,
+          "cacheHeaders": {
+            "etag": false,
+            "lastModified": false,
+            "cacheControl": "max-age=300, must-revalidate"
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; aucune règle ne bloque ce chemin",
+        "aiCrawlersDisallowed": [
+          "GPTBot",
+          "ChatGPT-User",
+          "OAI-SearchBot",
+          "ClaudeBot",
+          "Claude-Web",
+          "anthropic-ai",
+          "CCBot",
+          "Google-Extended",
+          "Applebot-Extended",
+          "Bytespider",
+          "PerplexityBot",
+          "meta-externalagent",
+          "Amazonbot",
+          "cohere-ai"
+        ]
+      },
+      "itemsInFeed": 10,
+      "itemsCollected": 7,
+      "latestPublication": "2026-11-06T10:00:00.000Z",
+      "oldestCollected": "2026-11-03T10:43:41.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 0,
+        "content": "suffisant",
+        "medianContentLength": 4818,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 3.2136687687891525,
+        "estimationMethod": "Flux tronqué : 10 publications en 3.1 j (approximation, échantillon court)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 6,
+          "PARTIAL": 1,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [
+        {
+          "ruleId": "mit-tr-the-download",
+          "title": "The Download: Texas’s fragile AI boom and energy policy shifts",
+          "url": "https://www.technologyreview.com/2026/11/05/1144908/the-download-texas-fragile-ai-boom-us-energy-policy/",
+          "publishedAt": "2026-11-05T13:10:00.000Z"
+        },
+        {
+          "ruleId": "mit-tr-the-download",
+          "title": "The Download: blended meat, restored sight, and the agentic web",
+          "url": "https://www.technologyreview.com/2026/11/04/1148001/the-download-blended-meat-sight-restoring-implant-agentic-web/",
+          "publishedAt": "2026-11-04T13:10:00.000Z"
+        },
+        {
+          "ruleId": "mit-tr-the-download",
+          "title": "The Download: controlling AI agents and “Super Intelligence” loyalty tests",
+          "url": "https://www.technologyreview.com/2026/11/03/1147940/the-download-controlling-ai-agents-trump-super-intelligence/",
+          "publishedAt": "2026-11-03T13:10:00.000Z"
+        }
+      ],
+      "editorialFlagged": 0
+    },
+    {
+      "source": {
+        "id": "ieee-robotics",
+        "name": "IEEE Spectrum — Robotics",
+        "category": "innovation",
+        "type": "feed",
+        "url": "https://spectrum.ieee.org/feeds/topic/robotics.rss"
+      },
+      "effectiveUrl": "https://spectrum.ieee.org/feeds/topic/robotics.rss",
+      "format": "rss",
+      "requests": [
+        {
+          "requestedUrl": "https://spectrum.ieee.org/feeds/topic/robotics.rss",
+          "finalUrl": "https://spectrum.ieee.org/feeds/topic/robotics.rss",
+          "status": 200,
+          "redirected": false,
+          "contentType": "application/rss+xml; charset=utf-8",
+          "bytes": 383043,
+          "durationMs": 521,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": true,
+            "cacheControl": "public, max-age=0"
+          }
+        },
+        {
+          "requestedUrl": "https://spectrum.ieee.org/robots.txt",
+          "finalUrl": "https://spectrum.ieee.org/robots.txt",
+          "status": 200,
+          "redirected": false,
+          "contentType": "text/plain",
+          "bytes": 2781,
+          "durationMs": 62,
+          "cacheHeaders": {
+            "etag": true,
+            "lastModified": false,
+            "cacheControl": "public, max-age=0"
+          }
+        }
+      ],
+      "robots": {
+        "checked": true,
+        "allowed": true,
+        "note": "robots.txt lu ; aucune règle ne bloque ce chemin",
+        "aiCrawlersDisallowed": [
+          "GPTBot",
+          "ClaudeBot",
+          "anthropic-ai",
+          "CCBot",
+          "Google-Extended",
+          "Applebot-Extended",
+          "Bytespider",
+          "PerplexityBot",
+          "meta-externalagent",
+          "Amazonbot",
+          "cohere-ai"
+        ]
+      },
+      "itemsInFeed": 30,
+      "itemsCollected": 10,
+      "latestPublication": "2026-11-04T18:47:21.000Z",
+      "oldestCollected": "2026-10-07T13:49:48.000Z",
+      "errors": [],
+      "warnings": [],
+      "analysis": {
+        "accessible": true,
+        "exploitable": true,
+        "datesReliable": true,
+        "datesNotes": [
+          "Dates présentes, valides et cohérentes"
+        ],
+        "recency": "active",
+        "daysSinceLastPublication": 1,
+        "content": "suffisant",
+        "medianContentLength": 5600,
+        "authRequired": false,
+        "authNotes": "Aucune authentification requise",
+        "restrictions": [],
+        "recommendedForMvp": true,
+        "status": "OK",
+        "estimatedPerDay": 0.3333333333333333,
+        "estimationMethod": "10 publication(s) sur les 30 derniers jours (fenêtre couverte par le flux de 30 éléments)",
+        "exploitationMode": "FULL",
+        "levelDistribution": {
+          "FULL": 9,
+          "PARTIAL": 1,
+          "MINIMAL": 0
+        }
+      },
+      "editorialExcluded": [],
+      "editorialFlagged": 4
+    }
+  ]
+}
