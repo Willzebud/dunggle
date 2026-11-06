@@ -47,6 +47,18 @@ const EN = ['the', 'and', 'with', 'for', 'this', 'that', 'is', 'are', 'of', 'to'
 
 export const CONCISION = { maxChars: 600, maxSentences: 4, maxKeyPoints: 5 };
 
+/**
+ * Recherche d'une affirmation interdite : SENSIBLE À LA CASSE et bornée par des frontières de mots Unicode.
+ * (Incident B.1 : « MIT » était détecté dans « li-mit-es » par une recherche insensible à la casse et sans bornes.)
+ * Les espaces de l'affirmation acceptent tout blanc (y compris insécables) ; la ponctuation reste littérale.
+ */
+export function containsClaim(text: string, claim: string): boolean {
+  const c = claim.trim();
+  if (!c) return false;
+  const body = c.split(/\s+/).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+  return new RegExp(`(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])`, 'u').test(text);
+}
+
 export function autoCheckSummary(i: SummaryCheckInput): AutoCheck[] {
   const text = [i.summary ?? '', ...i.keyPoints].join(' ').trim();
   const expected = i.summaryExpected === true || (i.summaryExpected === 'if-kept' && i.kept);
@@ -73,7 +85,7 @@ export function autoCheckSummary(i: SummaryCheckInput): AutoCheck[] {
     checks.push({ criterion: 'essential_information', verdict: ratio >= 0.67 ? 'pass' : ratio > 0 ? 'warn' : 'fail', indicative: true, detail: `${found.length}/${i.referenceFacts.length} faits de référence retrouvés textuellement (une paraphrase correcte peut échapper à ce contrôle)` });
   } else checks.push({ criterion: 'essential_information', verdict: 'n/a', indicative: true, detail: 'Pas de faits de référence' });
 
-  const forbidden = (i.forbiddenClaims ?? []).filter((c) => norm(text).includes(norm(c)));
+  const forbidden = (i.forbiddenClaims ?? []).filter((c) => containsClaim(text, c));
   checks.push({ criterion: 'no_invented_claims', verdict: forbidden.length ? 'fail' : 'pass', indicative: true, detail: forbidden.length ? `Affirmations interdites retrouvées : ${forbidden.join(', ')}` : 'Aucune affirmation interdite retrouvée (une invention formulée autrement n’est pas détectée)' });
 
   const words = norm(text).match(/[a-z]+/g) ?? [];

@@ -19,6 +19,25 @@ export interface RunDeps {
   /** Horloge et attente injectables (tests hors ligne). */
   now?: () => number;
   sleep?: (ms: number) => Promise<void>;
+  /** Interruption demandée (Ctrl+C) : l'exécution s'arrête proprement AVANT la réservation suivante. */
+  shouldStop?: () => boolean;
+}
+
+/** Hypothèses de durée par appel : régime typique observé en B.1 (quelques secondes) et pire cas (délai SDK). */
+export const CALL_LATENCY_ASSUMPTIONS_MS = Object.freeze({ typical: 15_000, worst: 60_000 });
+
+/** Durée estimée d'une exécution (simulation de l'ordre réel et de l'espacement par fournisseur). */
+export function estimateRunDurationMs(plan: Pick<RunPlan, 'calls'>, latencyMs: number): number {
+  let t = 0;
+  const last = new Map<string, number>();
+  for (const c of plan.calls) {
+    const provider = MODELS[c.modelKey]?.provider === 'anthropic' ? 'anthropic' : 'openai';
+    const prev = last.get(provider);
+    if (prev !== undefined) t = Math.max(t, prev + PROVIDER_MIN_INTERVAL_MS[provider]);
+    last.set(provider, t);
+    t += latencyMs;
+  }
+  return t;
 }
 
 export interface RunReport {
@@ -28,6 +47,9 @@ export interface RunReport {
   stoppedReason: string | null;
   spentEur: number;
   runId: string | null;
+  /** Durée mesurée de chaque appel et de l'exécution (ms). */
+  timings?: { modelKey: string; publicationId: string; ms: number }[];
+  durationMs?: number;
 }
 
 /**
@@ -73,6 +95,11 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
   }
   if (deps.activation && deps.activation.phase !== plan.phase) blockers.push(`Activation délivrée pour ${deps.activation.phase}, plan ${plan.phase}`);
   if (deps.activation && args.confirmMaxEur !== null && args.confirmMaxEur > deps.activation.maxEur) blockers.push('Montant confirmé supérieur au montant autorisé');
+  if (deps.activation) {
+    const remaining = deps.activation.validUntil - (deps.now ?? Date.now)();
+    const typical = estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.typical);
+    if (typical * 1.25 > remaining) blockers.push(`Durée estimée (${Math.round(typical / 60_000)} min, marge 25 %) supérieure à la validité restante de l’activation (${Math.round(remaining / 60_000)} min)`);
+  }
   if (blockers.length) return { executed: false, blockers, records: [], stoppedReason: null, spentEur: 0, runId: null };
   const runId = randomUUID();
   const quota = { scope: 'trial' as const, phase: plan.phase, runId };
@@ -82,7 +109,13 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
   const now = deps.now ?? Date.now;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const lastCallAt = new Map<string, number>();
+  const timings: NonNullable<RunReport['timings']> = [];
+  const startedAt = now();
   for (const call of plan.calls) {
+    if (deps.shouldStop?.()) {
+      stoppedReason = 'interruption demandée : arrêt avant la réservation suivante (reprise possible sans doublon)';
+      break;
+    }
     if (records.length >= plan.maxCalls) {
       stoppedReason = 'plafond d’appels de l’exécution atteint';
       break;
@@ -99,7 +132,9 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
       if (wait > 0) await sleep(wait);
     }
     lastCallAt.set(provider, now());
+    const t0 = now();
     const rec = await analyzePublication(call.publication, { adapter: deps.adapterFor(call.modelKey), guard: deps.guard, scope: 'trial', quota });
+    timings.push({ modelKey: call.modelKey, publicationId: call.publication.id, ms: now() - t0 });
     records.push(rec);
     spent += rec.costEur ?? 0;
     if (rec.costUncertain) {
@@ -119,5 +154,5 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
       break;
     }
   }
-  return { executed: true, blockers: [], records, stoppedReason, spentEur: Math.round(spent * 1e6) / 1e6, runId };
+  return { executed: true, blockers: [], records, stoppedReason, spentEur: Math.round(spent * 1e6) / 1e6, runId, timings, durationMs: now() - startedAt };
 }

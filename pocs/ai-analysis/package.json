@@ -14,7 +14,8 @@
     "budget:scenarios": "tsx src/scripts/budget-scenarios.ts",
     "evaluate:real": "tsx src/scripts/evaluate-real.ts",
     "check:secrets": "tsx src/scripts/check-secrets.ts",
-    "authorize:real": "tsx src/scripts/authorize-real.ts"
+    "authorize:real": "tsx src/scripts/authorize-real.ts",
+    "compare": "tsx src/scripts/compare-models.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

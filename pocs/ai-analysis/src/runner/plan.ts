@@ -52,7 +52,7 @@ export function planRun(args: RunArgs, items: PublicationInput[], guard: BudgetG
   const used = ledger?.quotas?.phases?.[phase];
   const perModel = Math.min(args.maxCalls ?? RUN_CALL_LIMITS[args.mode], RUN_CALL_LIMITS[args.mode]);
   let phaseRemaining = phaseTotalMax(phase) - (used?.total ?? 0);
-  const calls: PlannedCall[] = [];
+  const perModelCalls = new Map<string, PlannedCall[]>();
   const skipped: RunPlan['skipped'] = [];
   for (const modelKey of args.models) {
     let n = 0;
@@ -70,11 +70,17 @@ export function planRun(args: RunArgs, items: PublicationInput[], guard: BudgetG
         continue;
       }
       const bound = buildPrompt(p, resolveInput(p)).inputTokensUpperBound;
-      calls.push({ modelKey, publication: p, key, inputTokensUpperBound: bound, maxCostEur: guard.estimateMaxCostEur(modelKey, bound) });
+      if (!perModelCalls.has(modelKey)) perModelCalls.set(modelKey, []);
+      perModelCalls.get(modelKey)!.push({ modelKey, publication: p, key, inputTokensUpperBound: bound, maxCostEur: guard.estimateMaxCostEur(modelKey, bound) });
       n++;
       phaseRemaining--;
     }
   }
+  // Ordre alterné entre modèles (H, L, H, L…) : les appels Anthropic s'intercalent pendant l'attente imposée
+  // par la limite OpenAI (1 requête/minute), et une interruption laisse les deux modèles à un avancement comparable.
+  const queues = [...perModelCalls.values()];
+  const calls: PlannedCall[] = [];
+  for (let i = 0; queues.some((q) => i < q.length); i++) for (const q of queues) if (i < q.length) calls.push(q[i]);
   const totalMaxEur = Math.round(calls.reduce((s, c) => s + c.maxCostEur, 0) * 1e6) / 1e6;
   return { mode: args.mode, phase, calls, skipped, maxCalls: Math.min(perModel * args.models.length, P.totalMax), totalMaxEur, duplicatesRemoved: source.length - unique.length };
 }

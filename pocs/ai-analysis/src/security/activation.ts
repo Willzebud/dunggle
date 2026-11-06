@@ -14,8 +14,17 @@ import { POC_PHASES, type PocPhase } from '../config/quotas.js';
 import { CANDIDATE_MODEL_KEYS } from '../config/models.js';
 
 export const GRANT_TTL_MS = 15 * 60_000;
-/** Durée maximale d'une exécution avec une activation donnée. */
-export const ACTIVATION_TTL_MS = 30 * 60_000;
+/**
+ * Durée maximale d'une exécution avec une activation donnée, PAR PHASE (jamais permanente, toujours en mémoire).
+ * B.1 : 2 appels → 30 minutes. B.2 : jusqu'à 72 appels avec ≥ 61 s entre deux requêtes OpenAI → environ
+ * 37 minutes en régime typique, 72 minutes si chaque appel atteignait le délai maximal du SDK (60 s) : 90 minutes.
+ * Une activation expirée en cours d'exécution fait refuser les appels suivants AVANT envoi (sûr, mais incomplet).
+ */
+export const ACTIVATION_TTL_MS_BY_PHASE: Readonly<Record<PocPhase, number>> = Object.freeze({ B1: 30 * 60_000, B2: 90 * 60_000 });
+/** Plafond absolu, toutes phases confondues. */
+export const ACTIVATION_TTL_MAX_MS = 90 * 60_000;
+/** @deprecated conservé pour compatibilité : durée B.1. */
+export const ACTIVATION_TTL_MS = ACTIVATION_TTL_MS_BY_PHASE.B1;
 
 export interface RealCallGrant {
   version: 1;
@@ -49,7 +58,8 @@ export class RealCallActivation {
   }
   /** @internal */
   static issue(g: RealCallGrant, now: number): RealCallActivation {
-    const a = new RealCallActivation(g.phase, Object.freeze([...g.models]), g.maxEur, g.nonce, now + ACTIVATION_TTL_MS);
+    const ttl = Math.min(ACTIVATION_TTL_MS_BY_PHASE[g.phase] ?? ACTIVATION_TTL_MS_BY_PHASE.B1, ACTIVATION_TTL_MAX_MS);
+    const a = new RealCallActivation(g.phase, Object.freeze([...g.models]), g.maxEur, g.nonce, now + ttl);
     issued.add(a);
     return a;
   }

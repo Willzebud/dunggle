@@ -18,7 +18,7 @@ import { AnthropicAdapter, OpenAIAdapter } from '../adapters/real.js';
 import { consumeGrant, grantMismatch, peekGrant, type RealCallActivation } from '../security/activation.js';
 import { ArgsError, parseArgs } from '../runner/args.js';
 import { planRun } from '../runner/plan.js';
-import { executeRun, realRunBlockers } from '../runner/run.js';
+import { CALL_LATENCY_ASSUMPTIONS_MS, estimateRunDurationMs, executeRun, realRunBlockers } from '../runner/run.js';
 import { smokeChecks, type SmokeGroundTruth } from '../runner/smoke-checks.js';
 import { redactSecrets } from '../security/redact.js';
 import type { PublicationInput } from '../types.js';
@@ -81,6 +81,9 @@ console.log(`Quotas de la phase ${plan.phase} (cumulatifs) : ${phaseUsed?.total 
 for (const e of phaseExceptions) console.log(`  Exception de quota : +${e.extraCalls} tentative pour ${e.modelKey} (incident ${e.incident.requestId}, HTTP ${e.incident.httpStatus}, non facturé) — ${e.approval}`);
 console.log(`COÛT MAXIMAL DU PLAN : ${plan.totalMaxEur.toFixed(6)} € (budget d’essai : ${DEFAULT_LIMITS.trialTotalCapEur} €, déjà dépensé : ${(ledger?.trial.spentEur ?? 0).toFixed(6)} €)`);
 
+const minutes = (ms: number) => `${Math.round(ms / 60_000)} min`;
+console.log(`DURÉE ESTIMÉE : ${minutes(estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.typical))} (typique), ${minutes(estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.worst))} (pire cas : chaque appel au délai maximal)`);
+
 const blockers = await realRunBlockers(args, plan, baseDeps);
 const grantProblem = grantMismatch(await peekGrant(VAR_DIR), { phase: plan.phase, models: args.models, maxEur: args.confirmMaxEur ?? plan.totalMaxEur });
 if (grantProblem) blockers.push(`Autorisation locale : ${grantProblem}`);
@@ -97,7 +100,14 @@ if (blockers.length) {
 }
 // Tous les prérequis sont remplis : l'autorisation est CONSOMMÉE (usage unique), l'activation n'existe qu'en mémoire.
 activation = await consumeGrant(VAR_DIR, { phase: plan.phase, models: args.models, maxEur: args.confirmMaxEur! });
-const report = await executeRun(args, plan, { ...baseDeps, activation });
+// Ctrl+C : arrêt propre avant la réservation suivante (aucune réservation laissée ouverte).
+let stopRequested = false;
+process.on('SIGINT', () => {
+  if (stopRequested) process.exit(130);
+  stopRequested = true;
+  console.error('\nInterruption demandée : fin de l’appel en cours, puis arrêt (Ctrl+C une seconde fois : arrêt immédiat, réservation à réconcilier).');
+});
+const report = await executeRun(args, plan, { ...baseDeps, activation, shouldStop: () => stopRequested });
 activation = null;
 if (!report.executed) {
   console.error('\nExécution réelle REFUSÉE (aucune réservation, aucun appel) :');
