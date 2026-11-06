@@ -29,6 +29,10 @@ Ces robots d'IA ne visent pas notre User-Agent : l'accès reste techniquement au
 3. **Pages protégées** (Angular Blog, OpenAI) : les liens sont conservés et cliquables, mais leur validité ne peut pas être vérifiée automatiquement.
 4. **Résumés affichés dans le dashboard** : la longueur et la forme acceptables d'un résumé généré à partir d'un article protégé restent à définir (courte citation, lien vers l'original).
 
-## Option proposée pour le POC 2 (non implémentée)
+## Mise en œuvre au POC 2 (phase A)
+
+Les politiques par source sont implémentées dans `pocs/ai-analysis/src/config/content-policies.ts`. Les 17 sources sont en `metadata-only`, car aucune autorisation n’a été vérifiée (voir `pocs/ai-analysis/reports/content-policy.md`).
+
+## Option initialement proposée
 
 Ajouter une politique par source, par exemple `aiContentPolicy: 'full' | 'metadata-only'`. Les trois sources signalées seraient en `metadata-only` par défaut (titre, date, URL, catégories et court extrait du flux) jusqu'à validation. Elles restent ainsi dans la veille, conformément à la règle « jamais exclue faute de contenu », sans que leur texte intégral soit envoyé au modèle.

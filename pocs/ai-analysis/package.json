@@ -1,0 +1,21 @@
+{
+  "name": "@dunggle/ai-analysis",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dunggle — POC 2 Phase A : préparation de l'analyse IA (politiques de contenu, schéma, budget, adaptateurs simulés). Aucun appel réel.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "tsx --test \"tests/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepare:eval": "tsx src/scripts/prepare-evaluation.ts",
+    "budget:scenarios": "tsx src/scripts/budget-scenarios.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

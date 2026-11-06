@@ -1,0 +1,94 @@
+# POC 2 — Analyse IA, phase A (préparation)
+
+Cette phase prépare l’analyse et la classification des publications par IA **sans effectuer aucun appel réel** :
+- politiques de contenu par source ;
+- schéma de sortie validé ;
+- adaptateurs (Anthropic, OpenAI et simulé) ;
+- protection budgétaire ;
+- préfiltre en observation ;
+- jeu d’évaluation avec vérité terrain.
+
+## Commandes
+
+Depuis la racine du monorepo :
+
+```bash
+npm install
+npm run poc2:test        # tests hors ligne (aucun réseau, aucune facturation)
+npm run poc2:prepare     # reports/evaluation-readiness.md
+npm run poc2:budget      # reports/budget-scenarios.md
+npm run typecheck        # tous les workspaces
+```
+
+Ou depuis ce dossier : `npm test`, `npm run prepare:eval`, `npm run budget:scenarios`, `npm run typecheck`.
+
+## Garanties de la phase A
+
+- `REAL_CALLS_ENABLED = false` est **figé dans le code** et n’est pas pilotable par variable d’environnement. Les adaptateurs réels construisent les paramètres de requête, puis lèvent `RealCallsDisabledError`.
+- Le POC ne contient aucun `fetch` ni client réseau ou SDK fournisseur. Un test le vérifie dans le code source, et tous les tests remplacent `fetch` par une fonction qui échoue.
+- Les clés API proviendraient des variables d’environnement (voir `.env.example`). Elles ne sont ni lues ni affichées en phase A, seule leur présence peut être testée.
+- L’état budgétaire et les journaux locaux vont dans `var/`, qui est ignoré par Git.
+
+## Architecture
+
+| Fichier | Rôle |
+|---|---|
+| `src/taxonomy.ts` | Thématiques, sous-thématiques extensibles, types, motifs d’exclusion (taxonomie du POC 1.2) |
+| `src/schema.ts` | Schéma JSON envoyé aux fournisseurs et validation locale stricte (bornes, cohérences) |
+| `src/config/content-policies.ts` | Politique par source (`full-allowed` / `excerpt-only` / `metadata-only` / `blocked`) et garde-fou de vérification |
+| `src/content-policy.ts` | Croisement niveau de contenu × politique → mode envoyé (`full` / `excerpt` / `metadata` / `none`) |
+| `src/prompt.ts` | Consignes stables (compatibles avec la mise en cache) et charge utile par publication ; estimation prudente des tokens |
+| `src/config/models.ts` | Modèles candidats et tarifs **vérifiés le 2026-11-06** (voir `reports/models-pricing.md`) |
+| `src/config/budget.ts` | Plafonds : 10 € absolu, 8 € opérationnel, 0,50 € d’essai, quota quotidien, tokens par requête |
+| `src/budget/guard.ts` | Estimation maximale, réservation atomique, réconciliation, coût incertain, libération, réservations orphelines, journal |
+| `src/budget/store.ts` | Registre en mémoire (verrou asynchrone) ou fichier JSON (verrou `mkdir`, écriture atomique, inter-processus) |
+| `src/adapters/` | Interface commune, adaptateur simulé, adaptateurs Anthropic / OpenAI désactivés |
+| `src/pipeline.ts` | Analyse d’une publication : politique → règle éditoriale → budget → appel → validation → règles de contenu → rubrique |
+| `src/prefilter.ts` | Préfiltre déterministe en **observation** (désactivé), qui réutilise la grille du POC 1.2 |
+| `fixtures/` | 30 publications réelles (métadonnées seules), 9 fixtures synthétiques, vérité terrain séparée |
+
+### Dimensions indépendantes
+
+- `relevance` (0–100) : pertinence personnelle.
+- `novelty` (1–5) : importance de la nouveauté.
+- `contentLevel` : disponibilité du contenu.
+
+Une release Angular mineure peut avoir `relevance` 85 et `novelty` 1.
+
+### `confidence`
+
+Nombre réel de **0 à 1** produit par le modèle : sa confiance dans la classification. Les consignes demandent de l’abaisser quand seules les métadonnées sont fournies. C’est une auto-évaluation, pas une probabilité calibrée. Sa calibration (corrélation avec les erreurs mesurées contre la vérité terrain) fait partie de la phase B.
+
+### Rubriques
+
+- `updates` : releases et nouveautés faibles (`novelty` ≤ 3 pour une release, ≤ 2 sinon) des thématiques prioritaires (Angular, IA, agents), et compilations marquées (« Video Friday »). Une exclusion proposée par le modèle pour une release prioritaire est annulée et tracée, sauf pour un doublon.
+- `main` : le reste, y compris les versions majeures (`novelty` ≥ 4).
+- `excluded` : exclusion motivée ou règle éditoriale (« The Download »). La publication est conservée et récupérable.
+- `pending` : publication non analysée (source bloquée, budget, erreur fournisseur, sortie invalide). Elle est conservée pour une analyse ultérieure.
+
+### Budget
+
+Chaque appel suit le même circuit :
+1. L’estimation maximale ((entrée + sortie au plafond) × marge × taux) est **réservée** dans une transaction exclusive, avant l’appel.
+2. Après l’appel, la réservation est **réconciliée** avec l’usage réel renvoyé par le fournisseur.
+3. En cas d’erreur :
+   - usage inconnu : le maximum est facturé et marqué incertain ;
+   - requête certainement non envoyée : la réservation est libérée sans frais.
+4. Un tarif inconnu, un plafond dépassé ou une requête trop grande entraînent un **refus avant l’appel**.
+
+La comptabilité interne reste une estimation : il faut aussi configurer des plafonds dans les consoles des fournisseurs.
+
+## Rapports
+
+- `reports/models-pricing.md` : modèles candidats, tarifs et capacités vérifiés.
+- `reports/content-policy.md` : politiques par source et restrictions non résolues.
+- `reports/evaluation-readiness.md` : jeu d’évaluation, modes envoyés, coûts maximaux, mesure du préfiltre (généré).
+- `reports/budget-scenarios.md` : scénarios budgétaires exécutés et projections (généré).
+
+## Limites connues (phase A)
+
+- Aucune mesure de qualité réelle : c’est l’objet de la phase B.
+- Toutes les sources réelles sont en `metadata-only` : pas de résumé réel possible tant que les droits ne sont pas vérifiés.
+- La vérité terrain a été rédigée par l’assistant et doit être relue.
+- Les formats de requête fournisseurs (unions avec `null`, `enum` entier) restent à confirmer par une première requête réelle.
+- Le préfiltre importe un module du POC 1 par chemin relatif (`../../veille-feasibility/...`). C’est acceptable pour un POC ; un paquet partagé serait à envisager dans l’application finale.

@@ -16,7 +16,10 @@
     "poc:all": "npm run poc:sources && npm run poc:extraction",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "poc:candidates": "npm run test:candidates -w @dunggle/veille-feasibility --",
-    "test": "npm run test:unit -w @dunggle/veille-feasibility",
-    "poc:candidates:offline": "npm run test:candidates -w @dunggle/veille-feasibility -- --offline"
+    "test": "npm run test:unit -w @dunggle/veille-feasibility && npm run test -w @dunggle/ai-analysis",
+    "poc:candidates:offline": "npm run test:candidates -w @dunggle/veille-feasibility -- --offline",
+    "poc2:test": "npm run test -w @dunggle/ai-analysis",
+    "poc2:prepare": "npm run prepare:eval -w @dunggle/ai-analysis",
+    "poc2:budget": "npm run budget:scenarios -w @dunggle/ai-analysis"
   }
 }

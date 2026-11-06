@@ -1,0 +1,1049 @@
+{
+  "description": "Vérité terrain indépendante du jeu d'évaluation (rédigée à partir des titres et, pour les fixtures synthétiques, de leur texte). relevance : high ≥ 70, medium 40–69, low < 40. Un tableau acceptableExclusions contenant null signifie que l'exclusion n'est pas obligatoire. Rédigée par l'assistant le 2026-11-06 : à relire et corriger par le propriétaire du projet avant la phase B.",
+  "authoredAt": "2026-11-06",
+  "bands": {
+    "high": [
+      70,
+      100
+    ],
+    "medium": [
+      40,
+      69
+    ],
+    "low": [
+      0,
+      39
+    ]
+  },
+  "items": [
+    {
+      "id": "gh-angular:435859328",
+      "themes": [
+        "ANGULAR"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "high",
+      "novelty": [
+        1,
+        2
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Pré-version Angular : faible nouveauté, forte pertinence personnelle.",
+      "summaryExpected": false
+    },
+    {
+      "id": "gh-angular:432042455",
+      "themes": [
+        "ANGULAR"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        1,
+        1
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Correctif d’une branche LTS.",
+      "summaryExpected": false
+    },
+    {
+      "id": "gh-angular-components:433858366",
+      "themes": [
+        "ANGULAR"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        1,
+        1
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Correctif Angular Components.",
+      "summaryExpected": false
+    },
+    {
+      "id": "angular-blog:https://medium.com/p/9619a35e2b0a",
+      "themes": [
+        "ANGULAR"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "feature",
+        "technical_analysis"
+      ],
+      "relevance": "high",
+      "novelty": [
+        3,
+        4
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main",
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Compilateur Angular fondé sur TypeScript 7 (sous-thème typescript attendu).",
+      "summaryExpected": false
+    },
+    {
+      "id": "angular-blog:https://medium.com/p/3846cae9283a",
+      "themes": [
+        "ANGULAR"
+      ],
+      "acceptableExtraThemes": [
+        "AI"
+      ],
+      "types": [
+        "feature",
+        "technical_analysis"
+      ],
+      "relevance": "high",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main",
+        "updates"
+      ],
+      "ambiguous": true,
+      "notes": "Récapitulatif hebdomadaire : plusieurs sujets, nouveauté variable.",
+      "summaryExpected": false
+    },
+    {
+      "id": "typescript-blog:https://devblogs.microsoft.com/typescript/?p=5473",
+      "themes": [
+        "ANGULAR"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "high",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Bêta TypeScript : rubrique Mises à jour.",
+      "summaryExpected": false
+    },
+    {
+      "id": "typescript-blog:https://devblogs.microsoft.com/typescript/?p=5246",
+      "themes": [
+        "ANGULAR"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "high",
+      "novelty": [
+        4,
+        5
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Version majeure TypeScript 7.0 : flux principal.",
+      "summaryExpected": false
+    },
+    {
+      "id": "openai-news:https://openai.com/index/introducing-gpt-6-cyber",
+      "themes": [
+        "AI",
+        "DIGITAL_INNOVATION"
+      ],
+      "acceptableExtraThemes": [
+        "AI_AGENTS"
+      ],
+      "types": [
+        "product",
+        "research"
+      ],
+      "relevance": "high",
+      "novelty": [
+        4,
+        5
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Modèle IA appliqué à la cybersécurité.",
+      "summaryExpected": false
+    },
+    {
+      "id": "openai-news:https://openai.com/index/cultfit-builds-with-codex",
+      "themes": [],
+      "acceptableExtraThemes": [],
+      "types": [
+        "product"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        2
+      ],
+      "acceptableExclusions": [
+        "promotional"
+      ],
+      "sections": [
+        "excluded"
+      ],
+      "ambiguous": false,
+      "notes": "Témoignage client.",
+      "summaryExpected": false
+    },
+    {
+      "id": "openai-news:https://openai.com/ads/customers/flipsnack",
+      "themes": [],
+      "acceptableExtraThemes": [],
+      "types": [
+        "product"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        1
+      ],
+      "acceptableExclusions": [
+        "promotional"
+      ],
+      "sections": [
+        "excluded"
+      ],
+      "ambiguous": false,
+      "notes": "Page client publicitaire.",
+      "summaryExpected": false
+    },
+    {
+      "id": "openai-news:https://openai.com/index/openai-to-acquire-pierre",
+      "themes": [],
+      "acceptableExtraThemes": [
+        "AI"
+      ],
+      "types": [
+        "product"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        3
+      ],
+      "acceptableExclusions": [
+        "acquisition_no_tech",
+        null
+      ],
+      "sections": [
+        "excluded",
+        "main"
+      ],
+      "ambiguous": true,
+      "notes": "Acquisition : impact technique non établi par le titre seul.",
+      "summaryExpected": false
+    },
+    {
+      "id": "openai-news:https://openai.com/index/australian-universities-ai-native-graduates",
+      "themes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "acceptableExtraThemes": [
+        "AI"
+      ],
+      "types": [
+        "prospective_analysis",
+        "product"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        2
+      ],
+      "acceptableExclusions": [
+        "promotional",
+        null
+      ],
+      "sections": [
+        "excluded",
+        "main"
+      ],
+      "ambiguous": true,
+      "notes": "Adoption dans l’enseignement, ton promotionnel possible.",
+      "summaryExpected": false
+    },
+    {
+      "id": "deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-our-next-frontier-model/",
+      "themes": [
+        "AI"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "product",
+        "research"
+      ],
+      "relevance": "high",
+      "novelty": [
+        4,
+        5
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Nouveau modèle frontière (MINIMAL : titre seul).",
+      "summaryExpected": false
+    },
+    {
+      "id": "deepmind-blog:https://deepmind.google/blog/genie-4-a-new-generation-of-world-simulation/",
+      "themes": [
+        "AI"
+      ],
+      "acceptableExtraThemes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "types": [
+        "research",
+        "product"
+      ],
+      "relevance": "high",
+      "novelty": [
+        4,
+        5
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Modèle de simulation de mondes.",
+      "summaryExpected": false
+    },
+    {
+      "id": "huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-interactive-world-simulation",
+      "themes": [
+        "AI"
+      ],
+      "acceptableExtraThemes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "types": [
+        "product",
+        "research"
+      ],
+      "relevance": "high",
+      "novelty": [
+        3,
+        4
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Modèles ouverts de simulation (robotique en sous-thème possible).",
+      "summaryExpected": false
+    },
+    {
+      "id": "google-research:https://research.google/blog/detecting-signs-of-hypertension-using-wearable-sensors/",
+      "themes": [
+        "AI"
+      ],
+      "acceptableExtraThemes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "types": [
+        "research"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main",
+        "updates"
+      ],
+      "ambiguous": true,
+      "notes": "IA appliquée à la santé : pertinence personnelle incertaine.",
+      "summaryExpected": false
+    },
+    {
+      "id": "simon-willison:https://simonwillison.net/2026/Nov/5/paul-ford/",
+      "themes": [
+        "AI"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "prospective_analysis"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        2
+      ],
+      "acceptableExclusions": [
+        "opinion_no_analysis",
+        null
+      ],
+      "sections": [
+        "excluded",
+        "main",
+        "updates"
+      ],
+      "ambiguous": true,
+      "notes": "Citation brève : intérêt dépend du contenu (non transmis).",
+      "summaryExpected": false
+    },
+    {
+      "id": "simon-willison:https://simonwillison.net/2026/Nov/3/llm/",
+      "themes": [
+        "AI"
+      ],
+      "acceptableExtraThemes": [
+        "AI_AGENTS"
+      ],
+      "types": [
+        "release"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        1,
+        2
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Correctif de l’outil llm.",
+      "summaryExpected": false
+    },
+    {
+      "id": "gh-openai-agents:413354170",
+      "themes": [
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "high",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Version mineure du SDK d’agents.",
+      "summaryExpected": false
+    },
+    {
+      "id": "gh-langgraph:436052940",
+      "themes": [
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        1,
+        1
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Correctif CLI LangGraph.",
+      "summaryExpected": false
+    },
+    {
+      "id": "gh-mcp-ts-sdk:422181946",
+      "themes": [
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "high",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Version mineure du SDK MCP.",
+      "summaryExpected": false
+    },
+    {
+      "id": "gh-claude-code:433257014",
+      "themes": [
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "high",
+      "novelty": [
+        1,
+        2
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Correctif Claude Code.",
+      "summaryExpected": false
+    },
+    {
+      "id": "project-zero:projectzero.google/2026/05/pixel-10-exploit.html",
+      "themes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "security_advisory",
+        "technical_analysis"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        3,
+        4
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Chaîne d’exploitation 0-click (recherche offensive).",
+      "summaryExpected": false
+    },
+    {
+      "id": "one-useful-thing:https://www.oneusefulthing.org/p/agency-and-agents",
+      "themes": [
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [
+        "DIGITAL_INNOVATION",
+        "AI"
+      ],
+      "types": [
+        "prospective_analysis"
+      ],
+      "relevance": "high",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main",
+        "updates"
+      ],
+      "ambiguous": true,
+      "notes": "Analyse sur les agents ; titre peu explicite (métadonnées seules).",
+      "summaryExpected": false
+    },
+    {
+      "id": "mit-tech-review:https://www.technologyreview.com/?p=1148090",
+      "themes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "acceptableExtraThemes": [
+        "AI"
+      ],
+      "types": [
+        "prospective_analysis",
+        "product"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Robot humanoïde domestique (retour d’expérience).",
+      "summaryExpected": false
+    },
+    {
+      "id": "mit-tech-review:https://www.technologyreview.com/?p=1148062",
+      "themes": [],
+      "acceptableExtraThemes": [],
+      "types": [
+        "prospective_analysis"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        1
+      ],
+      "acceptableExclusions": [
+        "off_topic"
+      ],
+      "sections": [
+        "excluded"
+      ],
+      "ambiguous": false,
+      "notes": "Politique énergétique sans lien numérique direct.",
+      "summaryExpected": false
+    },
+    {
+      "id": "mit-tech-review:https://www.technologyreview.com/?p=1144908",
+      "themes": [],
+      "acceptableExtraThemes": [],
+      "types": [
+        "prospective_analysis"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        1
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "excluded"
+      ],
+      "ambiguous": false,
+      "notes": "Digest « The Download » exclu par règle éditoriale : non analysé.",
+      "expectedStatus": "skipped-editorial",
+      "summaryExpected": false
+    },
+    {
+      "id": "mit-tech-review:https://www.technologyreview.com/?p=1147596",
+      "themes": [
+        "AI_AGENTS",
+        "DIGITAL_INNOVATION"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "technical_analysis",
+        "product"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        1,
+        2
+      ],
+      "acceptableExclusions": [
+        "promotional",
+        null
+      ],
+      "sections": [
+        "excluded",
+        "main",
+        "updates"
+      ],
+      "ambiguous": true,
+      "notes": "Probable contenu de marque.",
+      "summaryExpected": false
+    },
+    {
+      "id": "ieee-robotics:https://spectrum.ieee.org/video-friday-whole-body-manipulation",
+      "themes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "product",
+        "research"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        2
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": true,
+      "notes": "Compilation « Video Friday » marquée : rubrique Mises à jour.",
+      "summaryExpected": false
+    },
+    {
+      "id": "ieee-robotics:https://spectrum.ieee.org/ai-robot-safety-cybersecurity-vicone",
+      "themes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "acceptableExtraThemes": [
+        "AI"
+      ],
+      "types": [
+        "technical_analysis"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Sécurité des robots (robotique + cybersécurité).",
+      "summaryExpected": false
+    },
+    {
+      "id": "synthetic:angular-99",
+      "themes": [
+        "ANGULAR"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release",
+        "feature"
+      ],
+      "relevance": "high",
+      "novelty": [
+        3,
+        4
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main",
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Fixture : version majeure fictive.",
+      "summaryExpected": true,
+      "referenceFacts": [
+        "99.0",
+        "deriveSignal",
+        "legacyZoneMode"
+      ],
+      "forbiddenClaims": [
+        "100",
+        "Angular 100"
+      ]
+    },
+    {
+      "id": "synthetic:orion-multimodal",
+      "themes": [
+        "AI"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "research",
+        "product"
+      ],
+      "relevance": "high",
+      "novelty": [
+        3,
+        4
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Fixture : modèle multimodal fictif.",
+      "summaryExpected": true,
+      "referenceFacts": [
+        "7 milliards",
+        "Apache-2.0",
+        "81,4"
+      ],
+      "forbiddenClaims": [
+        "13 milliards",
+        "MIT"
+      ]
+    },
+    {
+      "id": "synthetic:mcp-async-tasks",
+      "themes": [
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "feature"
+      ],
+      "relevance": "high",
+      "novelty": [
+        3,
+        4
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main",
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Fixture : évolution fictive du protocole.",
+      "summaryExpected": true,
+      "referenceFacts": [
+        "2099-01",
+        "asynchrones"
+      ],
+      "forbiddenClaims": [
+        "introduit une rupture de compatibilité"
+      ]
+    },
+    {
+      "id": "synthetic:orchestrajs-32",
+      "themes": [
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "release"
+      ],
+      "relevance": "high",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "updates"
+      ],
+      "ambiguous": false,
+      "notes": "Fixture PARTIAL : résumé limité à l’extrait.",
+      "summaryExpected": true,
+      "referenceFacts": [
+        "3.2",
+        "reprise"
+      ],
+      "forbiddenClaims": [
+        "4.0"
+      ]
+    },
+    {
+      "id": "synthetic:lumio-funding",
+      "themes": [],
+      "acceptableExtraThemes": [],
+      "types": [
+        "product"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        1
+      ],
+      "acceptableExclusions": [
+        "funding_only"
+      ],
+      "sections": [
+        "excluded"
+      ],
+      "ambiguous": false,
+      "notes": "Fixture : levée de fonds sans innovation.",
+      "summaryExpected": true,
+      "referenceFacts": [
+        "40 millions"
+      ],
+      "forbiddenClaims": []
+    },
+    {
+      "id": "synthetic:logical-qubits",
+      "themes": [
+        "DIGITAL_INNOVATION"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "breakthrough",
+        "research"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        4,
+        5
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main"
+      ],
+      "ambiguous": false,
+      "notes": "Fixture : percée quantique fictive.",
+      "summaryExpected": true,
+      "referenceFacts": [
+        "48",
+        "qubits logiques"
+      ],
+      "forbiddenClaims": [
+        "calcul utile réalisé"
+      ]
+    },
+    {
+      "id": "synthetic:regional-agents-rules",
+      "themes": [
+        "DIGITAL_INNOVATION",
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "prospective_analysis"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        2,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main",
+        "updates"
+      ],
+      "ambiguous": true,
+      "notes": "Fixture PARTIAL : réglementation à impact concret.",
+      "summaryExpected": true,
+      "referenceFacts": [
+        "journalise"
+      ],
+      "forbiddenClaims": []
+    },
+    {
+      "id": "synthetic:blocked-source",
+      "themes": [],
+      "acceptableExtraThemes": [],
+      "types": [
+        "product"
+      ],
+      "relevance": "low",
+      "novelty": [
+        1,
+        1
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "pending"
+      ],
+      "ambiguous": false,
+      "notes": "Fixture : source bloquée, aucun appel.",
+      "expectedStatus": "skipped-blocked",
+      "summaryExpected": false
+    },
+    {
+      "id": "synthetic:minimal-announcement",
+      "themes": [
+        "AI_AGENTS"
+      ],
+      "acceptableExtraThemes": [],
+      "types": [
+        "product"
+      ],
+      "relevance": "medium",
+      "novelty": [
+        1,
+        3
+      ],
+      "acceptableExclusions": [
+        null
+      ],
+      "sections": [
+        "main",
+        "updates"
+      ],
+      "ambiguous": true,
+      "notes": "Fixture MINIMAL : titre seul, aucun résumé.",
+      "summaryExpected": false
+    }
+  ]
+}
