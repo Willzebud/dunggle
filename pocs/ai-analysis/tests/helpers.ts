@@ -15,6 +15,9 @@ export const evaluationSet = JSON.parse(readFileSync(new URL('evaluation-set.jso
 export const groundTruth = JSON.parse(readFileSync(new URL('ground-truth.json', fixturesDir), 'utf8')) as {
   items: {
     id: string;
+    editorialDecision: 'must_keep' | 'must_exclude' | 'ambiguous';
+    coveragePolicy: 'mandatory' | 'selective';
+    hardToClassify: boolean;
     themes: string[];
     acceptableExtraThemes: string[];
     types: string[];
@@ -22,8 +25,9 @@ export const groundTruth = JSON.parse(readFileSync(new URL('ground-truth.json', 
     novelty: [number, number];
     acceptableExclusions: (string | null)[];
     sections: string[];
-    ambiguous: boolean;
-    summaryExpected: boolean;
+    summaryAllowed: boolean;
+    summaryExpected: boolean | 'if-kept';
+    exclusionBehaviourTest?: boolean;
     expectedStatus?: string;
     referenceFacts?: string[];
     forbiddenClaims?: string[];

@@ -1,4 +1,4 @@
-import { CHARS_PER_TOKEN_CONSERVATIVE } from './config/budget.js';
+import { CHARS_PER_TOKEN_TYPICAL, PROVIDER_OVERHEAD_TOKENS } from './config/budget.js';
 import type { ResolvedInput } from './content-policy.js';
 import { ANALYSIS_JSON_SCHEMA } from './schema.js';
 import { EXCLUSION_REASONS, PUBLICATION_TYPES, SUBTHEMES, THEMES } from './taxonomy.js';
@@ -20,12 +20,20 @@ Réponds uniquement par l'objet JSON demandé.
 - confidence (0–1) : ta confiance dans la classification ; baisse-la quand seules les métadonnées sont fournies.
 - relevanceReason : une phrase en français, fondée uniquement sur les informations fournies.
 - summary / keyPoints : en français, UNIQUEMENT à partir du texte fourni. Si aucun texte n'est fourni, summary = null et keyPoints = []. Si le texte est un extrait, ne dépasse pas ce qu'il contient. N'invente aucun fait, chiffre, nom ou date.
-- exclusionReason : null, ou un motif parmi ${EXCLUSION_REASONS.join(', ')}. N'exclus jamais une publication parce que son contenu est absent ou que sa nouveauté est faible. Les levées de fonds, résultats financiers, nominations, classements et contenus promotionnels sans nouveauté technique sont exclus.`;
+- exclusionReason : null, ou un motif parmi ${EXCLUSION_REASONS.join(', ')}. N'exclus jamais une publication parce que son contenu est absent ou que sa nouveauté est faible. Les levées de fonds, résultats financiers, nominations, classements et contenus promotionnels sans nouveauté technique sont exclus.
+- Si exclusionReason n'est pas null, summary = null et keyPoints = [] : ne résume pas une publication que tu exclus.`;
 
 export interface BuiltPrompt {
   system: string;
   user: string;
+  /** Estimation TYPIQUE (projections de volume). */
   inputTokensEstimate: number;
+  /**
+   * Borne HAUTE utilisée pour la réservation budgétaire : 1 token ≤ 1 octet UTF-8 pour un tokeniseur
+   * BPE au niveau de l'octet, plus une marge forfaitaire pour le formatage des messages et le prompt
+   * système injecté par la sortie structurée (dont la taille n'est pas publiée : hypothèse documentée).
+   */
+  inputTokensUpperBound: number;
 }
 
 export function buildPrompt(pub: PublicationInput, input: ResolvedInput): BuiltPrompt {
@@ -44,6 +52,13 @@ export function buildPrompt(pub: PublicationInput, input: ResolvedInput): BuiltP
     text: input.text,
   };
   const user = JSON.stringify(payload);
-  const chars = SYSTEM_PROMPT.length + user.length + JSON.stringify(ANALYSIS_JSON_SCHEMA).length;
-  return { system: SYSTEM_PROMPT, user, inputTokensEstimate: Math.ceil(chars / CHARS_PER_TOKEN_CONSERVATIVE) };
+  const parts = [SYSTEM_PROMPT, user, JSON.stringify(ANALYSIS_JSON_SCHEMA)];
+  const chars = parts.reduce((s, p) => s + p.length, 0);
+  const bytes = parts.reduce((s, p) => s + Buffer.byteLength(p, 'utf8'), 0);
+  return {
+    system: SYSTEM_PROMPT,
+    user,
+    inputTokensEstimate: Math.ceil(chars / CHARS_PER_TOKEN_TYPICAL),
+    inputTokensUpperBound: bytes + PROVIDER_OVERHEAD_TOKENS,
+  };
 }

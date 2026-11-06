@@ -107,7 +107,7 @@ test('releases prioritaires : toujours visibles (Mises à jour), même avec faib
   const over = computeSection(rel, out({ themes: ['ANGULAR'], type: 'release', novelty: 1, exclusionReason: 'off_topic' }));
   assert.equal(over.section, 'updates');
   assert.equal(over.analysis.exclusionReason, null);
-  assert.ok(over.violations[0].startsWith('priority-release-exclusion-overridden'));
+  assert.ok(over.violations[0].startsWith('mandatory-coverage-exclusion-overridden'));
   assert.equal(computeSection(rel, out({ themes: ['ANGULAR'], type: 'release', novelty: 5 })).section, 'main', 'version majeure : flux principal');
   assert.equal(computeSection(rel, out({ themes: ['ANGULAR'], type: 'release', exclusionReason: 'duplicate' })).section, 'excluded', 'doublon réel : exclu');
 });

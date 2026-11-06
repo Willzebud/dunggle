@@ -30,7 +30,7 @@ test('budget : tarif inconnu → refus avant tout appel', async () => {
 
 test('budget : requête trop grande refusée (pas de troncature silencieuse)', async () => {
   const g = new BudgetGuard(new MemoryBudgetStore(), limits(), undefined, fixedNow);
-  await assert.rejects(g.reserve({ modelKey: 'mock-cheap', inputTokensEstimate: 4001 }), (e) => code(e) === 'request-too-large');
+  await assert.rejects(g.reserve({ modelKey: 'mock-cheap', inputTokensEstimate: 16001 }), (e) => code(e) === 'request-too-large');
   await assert.rejects(g.reserve({ modelKey: 'mock-cheap', inputTokensEstimate: 10, maxOutputTokens: 801 }), (e) => code(e) === 'request-too-large');
 });
 

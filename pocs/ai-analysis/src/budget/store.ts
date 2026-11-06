@@ -13,18 +13,34 @@ export interface Reservation {
   createdAt: string;
 }
 
+/** Appel envoyé dont la facturation réelle est inconnue : compté au maximum tant qu'il n'est pas réconcilié. */
+export interface UncertainEntry {
+  id: string;
+  modelKey: string;
+  scope: 'trial' | 'operational';
+  chargedEur: number;
+  month: string;
+  reason: string;
+  since: string;
+}
+
 export interface LedgerState {
   version: 1;
-  /** Par mois civil (YYYY-MM) : dépense réconciliée, réservations en cours, part incertaine (comptée dans spent). */
-  months: Record<string, { spentEur: number; reservedEur: number; uncertainEur: number }>;
+  /**
+   * Par mois civil UTC (YYYY-MM) : dépense comptée (réconciliée + incertaine), réservations en cours,
+   * part incertaine (incluse dans spent), dépassements constatés (coût réel > estimation).
+   */
+  months: Record<string, { spentEur: number; reservedEur: number; uncertainEur: number; overrunEur?: number }>;
   /** Par jour (YYYY-MM-DD) : nombre d'analyses réservées. */
   days: Record<string, { analyses: number }>;
   /** Budget global des essais du POC, toutes périodes confondues. */
   trial: { spentEur: number; reservedEur: number };
   reservations: Record<string, Reservation>;
+  /** Appels à facturation incertaine, jamais libérés : seule une réconciliation explicite peut les solder. */
+  uncertain: Record<string, UncertainEntry>;
 }
 
-export const emptyState = (): LedgerState => ({ version: 1, months: {}, days: {}, trial: { spentEur: 0, reservedEur: 0 }, reservations: {} });
+export const emptyState = (): LedgerState => ({ version: 1, months: {}, days: {}, trial: { spentEur: 0, reservedEur: 0 }, reservations: {}, uncertain: {} });
 
 /**
  * Stockage du registre budgétaire. `transaction` exécute `fn` de manière exclusive :
@@ -107,6 +123,7 @@ export class FileBudgetStore implements BudgetStore {
     try {
       const s = JSON.parse(await readFile(this.path, 'utf8')) as LedgerState;
       if (s.version !== 1) throw new Error(`Version de registre inconnue : ${s.version}`);
+      s.uncertain ??= {}; // registres créés avant la phase A.1
       return s;
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code === 'ENOENT') return emptyState();

@@ -68,6 +68,7 @@ Les commandes réseau font un passage unique et séquentiel. Ne les lancez pas e
 | **POC 1.1** : extraction de contenu et niveaux FULL / PARTIAL / MINIMAL | ✅ Terminé | Hugging Face et Google Research passent de MINIMAL à FULL par extraction de la page (6/6). Aucune source n'est exclue faute de contenu |
 | **POC 1.2** : élargissement ciblé des sources | ✅ Terminé | 8 candidates et 2 variantes testées ; 5 retenues et **intégrées à la configuration** (17 sources) ; règles éditoriales ciblées (« The Download » exclu avec trace, « Video Friday » marqué) ; taxonomie du POC 2 documentée |
 | **POC 2 — phase A** : préparation de l’analyse IA | ✅ Terminée | Politiques de contenu (17 sources en `metadata-only`), schéma validé, adaptateurs Anthropic/OpenAI désactivés et simulés, garde budgétaire (10 € / 8 € / 0,50 €), jeu d’évaluation de 39 publications. **Aucun appel réel** |
+| **POC 2 — phase A.1** : fiabilisation du protocole | ✅ Terminée | Préfiltre évalué sur 3 statuts (must_keep / must_exclude / ambiguous), couverture obligatoire par source, résumés non produits pour les exclusions, grille de revue manuelle, budget audité (borne haute, coûts incertains, dette, mois civils, redémarrage, interruption) |
 | **POC 2 — phase B** : essais réels | ⏳ À valider | Sous budget d’essai de 0,50 €, après validation des points listés dans `pocs/ai-analysis/README.md` |
 
 Rapports détaillés : `pocs/veille-feasibility/results/` (index dans [`docs/README.md`](docs/README.md)).

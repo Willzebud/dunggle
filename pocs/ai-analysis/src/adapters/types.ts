@@ -7,9 +7,12 @@ export interface AnalysisRequest {
   maxOutputTokens: number;
 }
 
+/** Usage FACTURABLE normalisé (réflexion / raisonnement inclus dans outputTokens). */
 export interface ProviderUsage {
   inputTokens: number;
   outputTokens: number;
+  /** Tokens de réflexion / raisonnement déclarés (information, déjà comptés dans outputTokens). */
+  reasoningTokens?: number;
 }
 
 export interface AnalysisResponse {

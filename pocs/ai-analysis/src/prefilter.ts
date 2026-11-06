@@ -26,27 +26,56 @@ export function prefilterHint(pub: PublicationInput): PrefilterHint {
   return { verdict: g.verdict, wouldSkip: SKIP_VERDICTS.includes(g.verdict), domains: g.domains, note: g.note };
 }
 
+export type EditorialDecision = 'must_keep' | 'must_exclude' | 'ambiguous';
+
+/**
+ * Évaluation du préfiltre contre la décision éditoriale EXPLICITE de la vérité terrain :
+ * - faux négatif : publication `must_keep` que le préfiltre aurait écartée (le cas grave) ;
+ * - faux positif : publication `must_exclude` que le préfiltre aurait conservée ;
+ * - `ambiguous` : comptés à part (écartés / conservés), sans être des erreurs.
+ */
 export interface PrefilterEvaluation {
   total: number;
-  truePositives: number; // bien écartée (vérité terrain : exclue)
-  falsePositives: number; // gardée à tort (vérité terrain : exclue, préfiltre : garder)
-  falseNegatives: number; // écartée à tort (vérité terrain : à garder) — le cas grave
-  trueNegatives: number;
-  falseNegativeIds: string[];
-  falsePositiveIds: string[];
+  mustKeep: { total: number; kept: number; falseNegatives: number; falseNegativeIds: string[] };
+  mustExclude: { total: number; skipped: number; falsePositives: number; falsePositiveIds: string[] };
+  ambiguous: { total: number; skipped: number; kept: number; skippedIds: string[] };
+  /** Rappel sur must_keep (part conservée) et précision sur must_exclude (part écartée), ou null si vide. */
+  keepRecall: number | null;
+  excludeRecall: number | null;
 }
 
-export function evaluatePrefilter(items: { id: string; hint: PrefilterHint; expectedExcluded: boolean }[]): PrefilterEvaluation {
-  const r: PrefilterEvaluation = { total: items.length, truePositives: 0, falsePositives: 0, falseNegatives: 0, trueNegatives: 0, falseNegativeIds: [], falsePositiveIds: [] };
+export function evaluatePrefilter(items: { id: string; hint: PrefilterHint; decision: EditorialDecision }[]): PrefilterEvaluation {
+  const r: PrefilterEvaluation = {
+    total: items.length,
+    mustKeep: { total: 0, kept: 0, falseNegatives: 0, falseNegativeIds: [] },
+    mustExclude: { total: 0, skipped: 0, falsePositives: 0, falsePositiveIds: [] },
+    ambiguous: { total: 0, skipped: 0, kept: 0, skippedIds: [] },
+    keepRecall: null,
+    excludeRecall: null,
+  };
   for (const it of items) {
-    if (it.hint.wouldSkip && it.expectedExcluded) r.truePositives++;
-    else if (!it.hint.wouldSkip && it.expectedExcluded) {
-      r.falsePositives++;
-      r.falsePositiveIds.push(it.id);
-    } else if (it.hint.wouldSkip && !it.expectedExcluded) {
-      r.falseNegatives++;
-      r.falseNegativeIds.push(it.id);
-    } else r.trueNegatives++;
+    if (it.decision === 'must_keep') {
+      r.mustKeep.total++;
+      if (it.hint.wouldSkip) {
+        r.mustKeep.falseNegatives++;
+        r.mustKeep.falseNegativeIds.push(it.id);
+      } else r.mustKeep.kept++;
+    } else if (it.decision === 'must_exclude') {
+      r.mustExclude.total++;
+      if (it.hint.wouldSkip) r.mustExclude.skipped++;
+      else {
+        r.mustExclude.falsePositives++;
+        r.mustExclude.falsePositiveIds.push(it.id);
+      }
+    } else {
+      r.ambiguous.total++;
+      if (it.hint.wouldSkip) {
+        r.ambiguous.skipped++;
+        r.ambiguous.skippedIds.push(it.id);
+      } else r.ambiguous.kept++;
+    }
   }
+  r.keepRecall = r.mustKeep.total ? r.mustKeep.kept / r.mustKeep.total : null;
+  r.excludeRecall = r.mustExclude.total ? r.mustExclude.skipped / r.mustExclude.total : null;
   return r;
 }

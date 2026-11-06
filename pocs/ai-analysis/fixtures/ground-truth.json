@@ -1,5 +1,5 @@
 {
-  "description": "Vérité terrain indépendante du jeu d'évaluation (rédigée à partir des titres et, pour les fixtures synthétiques, de leur texte). relevance : high ≥ 70, medium 40–69, low < 40. Un tableau acceptableExclusions contenant null signifie que l'exclusion n'est pas obligatoire. Rédigée par l'assistant le 2026-11-06 : à relire et corriger par le propriétaire du projet avant la phase B.",
+  "description": "Vérité terrain indépendante du jeu d'évaluation. editorialDecision (explicite, non déduit de hardToClassify) : must_keep = à conserver obligatoirement, must_exclude = à exclure obligatoirement, ambiguous = plusieurs décisions acceptables. coveragePolicy : mandatory (canal officiel prioritaire, toujours visible) ou selective. hardToClassify : classification difficile (thème, type, nouveauté), indépendamment de la décision. summaryAllowed : un résumé serait autorisé (politique × niveau). summaryExpected : true = résumé attendu, false = aucun résumé, 'if-kept' = résumé attendu seulement si la publication est conservée. relevance : high ≥ 70, medium 40–69, low < 40. Rédigée par l'assistant (2026-11-06, révisée en phase A.1) : à relire par le propriétaire du projet.",
   "authoredAt": "2026-11-06",
   "bands": {
     "high": [
@@ -18,6 +18,9 @@
   "items": [
     {
       "id": "gh-angular:435859328",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "ANGULAR"
       ],
@@ -25,7 +28,7 @@
       "types": [
         "release"
       ],
-      "relevance": "high",
+      "relevance": "medium",
       "novelty": [
         1,
         2
@@ -36,12 +39,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Pré-version Angular : faible nouveauté, forte pertinence personnelle.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "gh-angular:432042455",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "ANGULAR"
       ],
@@ -60,12 +66,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Correctif d’une branche LTS.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "gh-angular-components:433858366",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "ANGULAR"
       ],
@@ -84,12 +93,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Correctif Angular Components.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "angular-blog:https://medium.com/p/9619a35e2b0a",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "ANGULAR"
       ],
@@ -110,12 +122,15 @@
         "main",
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Compilateur Angular fondé sur TypeScript 7 (sous-thème typescript attendu).",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "angular-blog:https://medium.com/p/3846cae9283a",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": true,
       "themes": [
         "ANGULAR"
       ],
@@ -138,12 +153,15 @@
         "main",
         "updates"
       ],
-      "ambiguous": true,
       "notes": "Récapitulatif hebdomadaire : plusieurs sujets, nouveauté variable.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "typescript-blog:https://devblogs.microsoft.com/typescript/?p=5473",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "ANGULAR"
       ],
@@ -162,12 +180,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Bêta TypeScript : rubrique Mises à jour.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "typescript-blog:https://devblogs.microsoft.com/typescript/?p=5246",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "ANGULAR"
       ],
@@ -186,12 +207,15 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Version majeure TypeScript 7.0 : flux principal.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "openai-news:https://openai.com/index/introducing-gpt-6-cyber",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "AI",
         "DIGITAL_INNOVATION"
@@ -214,12 +238,15 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Modèle IA appliqué à la cybersécurité.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "openai-news:https://openai.com/index/cultfit-builds-with-codex",
+      "editorialDecision": "must_exclude",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [],
       "acceptableExtraThemes": [],
       "types": [
@@ -236,12 +263,15 @@
       "sections": [
         "excluded"
       ],
-      "ambiguous": false,
       "notes": "Témoignage client.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "openai-news:https://openai.com/ads/customers/flipsnack",
+      "editorialDecision": "must_exclude",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [],
       "acceptableExtraThemes": [],
       "types": [
@@ -258,12 +288,15 @@
       "sections": [
         "excluded"
       ],
-      "ambiguous": false,
       "notes": "Page client publicitaire.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "openai-news:https://openai.com/index/openai-to-acquire-pierre",
+      "editorialDecision": "ambiguous",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [],
       "acceptableExtraThemes": [
         "AI"
@@ -284,12 +317,15 @@
         "excluded",
         "main"
       ],
-      "ambiguous": true,
       "notes": "Acquisition : impact technique non établi par le titre seul.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "openai-news:https://openai.com/index/australian-universities-ai-native-graduates",
+      "editorialDecision": "ambiguous",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [
         "DIGITAL_INNOVATION"
       ],
@@ -313,12 +349,15 @@
         "excluded",
         "main"
       ],
-      "ambiguous": true,
       "notes": "Adoption dans l’enseignement, ton promotionnel possible.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-our-next-frontier-model/",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "AI"
       ],
@@ -338,12 +377,15 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Nouveau modèle frontière (MINIMAL : titre seul).",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "deepmind-blog:https://deepmind.google/blog/genie-4-a-new-generation-of-world-simulation/",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "AI"
       ],
@@ -365,12 +407,15 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Modèle de simulation de mondes.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-interactive-world-simulation",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "AI"
       ],
@@ -392,12 +437,15 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Modèles ouverts de simulation (robotique en sous-thème possible).",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "google-research:https://research.google/blog/detecting-signs-of-hypertension-using-wearable-sensors/",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [
         "AI"
       ],
@@ -419,12 +467,15 @@
         "main",
         "updates"
       ],
-      "ambiguous": true,
       "notes": "IA appliquée à la santé : pertinence personnelle incertaine.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "simon-willison:https://simonwillison.net/2026/Nov/5/paul-ford/",
+      "editorialDecision": "ambiguous",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [
         "AI"
       ],
@@ -446,12 +497,15 @@
         "main",
         "updates"
       ],
-      "ambiguous": true,
       "notes": "Citation brève : intérêt dépend du contenu (non transmis).",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "simon-willison:https://simonwillison.net/2026/Nov/3/llm/",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "AI"
       ],
@@ -472,12 +526,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Correctif de l’outil llm.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "gh-openai-agents:413354170",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "AI_AGENTS"
       ],
@@ -485,7 +542,7 @@
       "types": [
         "release"
       ],
-      "relevance": "high",
+      "relevance": "medium",
       "novelty": [
         2,
         3
@@ -496,12 +553,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Version mineure du SDK d’agents.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "gh-langgraph:436052940",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "AI_AGENTS"
       ],
@@ -520,12 +580,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Correctif CLI LangGraph.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "gh-mcp-ts-sdk:422181946",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "AI_AGENTS"
       ],
@@ -533,7 +596,7 @@
       "types": [
         "release"
       ],
-      "relevance": "high",
+      "relevance": "medium",
       "novelty": [
         2,
         3
@@ -544,12 +607,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Version mineure du SDK MCP.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "gh-claude-code:433257014",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "mandatory",
+      "hardToClassify": false,
       "themes": [
         "AI_AGENTS"
       ],
@@ -557,7 +623,7 @@
       "types": [
         "release"
       ],
-      "relevance": "high",
+      "relevance": "medium",
       "novelty": [
         1,
         2
@@ -568,12 +634,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Correctif Claude Code.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "project-zero:projectzero.google/2026/05/pixel-10-exploit.html",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "DIGITAL_INNOVATION"
       ],
@@ -593,12 +662,15 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Chaîne d’exploitation 0-click (recherche offensive).",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "one-useful-thing:https://www.oneusefulthing.org/p/agency-and-agents",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [
         "AI_AGENTS"
       ],
@@ -621,12 +693,15 @@
         "main",
         "updates"
       ],
-      "ambiguous": true,
       "notes": "Analyse sur les agents ; titre peu explicite (métadonnées seules).",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "mit-tech-review:https://www.technologyreview.com/?p=1148090",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "DIGITAL_INNOVATION"
       ],
@@ -648,12 +723,15 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Robot humanoïde domestique (retour d’expérience).",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "mit-tech-review:https://www.technologyreview.com/?p=1148062",
+      "editorialDecision": "must_exclude",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [],
       "acceptableExtraThemes": [],
       "types": [
@@ -670,12 +748,15 @@
       "sections": [
         "excluded"
       ],
-      "ambiguous": false,
       "notes": "Politique énergétique sans lien numérique direct.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "mit-tech-review:https://www.technologyreview.com/?p=1144908",
+      "editorialDecision": "must_exclude",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [],
       "acceptableExtraThemes": [],
       "types": [
@@ -687,18 +768,21 @@
         1
       ],
       "acceptableExclusions": [
-        null
+        "duplicate"
       ],
       "sections": [
         "excluded"
       ],
-      "ambiguous": false,
       "notes": "Digest « The Download » exclu par règle éditoriale : non analysé.",
       "expectedStatus": "skipped-editorial",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "mit-tech-review:https://www.technologyreview.com/?p=1147596",
+      "editorialDecision": "ambiguous",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [
         "AI_AGENTS",
         "DIGITAL_INNOVATION"
@@ -722,12 +806,15 @@
         "main",
         "updates"
       ],
-      "ambiguous": true,
       "notes": "Probable contenu de marque.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "ieee-robotics:https://spectrum.ieee.org/video-friday-whole-body-manipulation",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [
         "DIGITAL_INNOVATION"
       ],
@@ -747,12 +834,15 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": true,
       "notes": "Compilation « Video Friday » marquée : rubrique Mises à jour.",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "ieee-robotics:https://spectrum.ieee.org/ai-robot-safety-cybersecurity-vicone",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "DIGITAL_INNOVATION"
       ],
@@ -773,12 +863,15 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Sécurité des robots (robotique + cybersécurité).",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "synthetic:angular-99",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "ANGULAR"
       ],
@@ -799,9 +892,7 @@
         "main",
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Fixture : version majeure fictive.",
-      "summaryExpected": true,
       "referenceFacts": [
         "99.0",
         "deriveSignal",
@@ -810,10 +901,15 @@
       "forbiddenClaims": [
         "100",
         "Angular 100"
-      ]
+      ],
+      "summaryAllowed": true,
+      "summaryExpected": true
     },
     {
       "id": "synthetic:orion-multimodal",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "AI"
       ],
@@ -833,9 +929,7 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Fixture : modèle multimodal fictif.",
-      "summaryExpected": true,
       "referenceFacts": [
         "7 milliards",
         "Apache-2.0",
@@ -844,10 +938,15 @@
       "forbiddenClaims": [
         "13 milliards",
         "MIT"
-      ]
+      ],
+      "summaryAllowed": true,
+      "summaryExpected": true
     },
     {
       "id": "synthetic:mcp-async-tasks",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "AI_AGENTS"
       ],
@@ -867,19 +966,22 @@
         "main",
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Fixture : évolution fictive du protocole.",
-      "summaryExpected": true,
       "referenceFacts": [
         "2099-01",
         "asynchrones"
       ],
       "forbiddenClaims": [
         "introduit une rupture de compatibilité"
-      ]
+      ],
+      "summaryAllowed": true,
+      "summaryExpected": true
     },
     {
       "id": "synthetic:orchestrajs-32",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "AI_AGENTS"
       ],
@@ -898,19 +1000,22 @@
       "sections": [
         "updates"
       ],
-      "ambiguous": false,
       "notes": "Fixture PARTIAL : résumé limité à l’extrait.",
-      "summaryExpected": true,
       "referenceFacts": [
         "3.2",
         "reprise"
       ],
       "forbiddenClaims": [
         "4.0"
-      ]
+      ],
+      "summaryAllowed": true,
+      "summaryExpected": true
     },
     {
       "id": "synthetic:lumio-funding",
+      "editorialDecision": "must_exclude",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [],
       "acceptableExtraThemes": [],
       "types": [
@@ -927,16 +1032,20 @@
       "sections": [
         "excluded"
       ],
-      "ambiguous": false,
       "notes": "Fixture : levée de fonds sans innovation.",
-      "summaryExpected": true,
       "referenceFacts": [
         "40 millions"
       ],
-      "forbiddenClaims": []
+      "forbiddenClaims": [],
+      "summaryAllowed": true,
+      "summaryExpected": false,
+      "exclusionBehaviourTest": true
     },
     {
       "id": "synthetic:logical-qubits",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [
         "DIGITAL_INNOVATION"
       ],
@@ -956,19 +1065,22 @@
       "sections": [
         "main"
       ],
-      "ambiguous": false,
       "notes": "Fixture : percée quantique fictive.",
-      "summaryExpected": true,
       "referenceFacts": [
         "48",
         "qubits logiques"
       ],
       "forbiddenClaims": [
         "calcul utile réalisé"
-      ]
+      ],
+      "summaryAllowed": true,
+      "summaryExpected": true
     },
     {
       "id": "synthetic:regional-agents-rules",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [
         "DIGITAL_INNOVATION",
         "AI_AGENTS"
@@ -989,16 +1101,19 @@
         "main",
         "updates"
       ],
-      "ambiguous": true,
       "notes": "Fixture PARTIAL : réglementation à impact concret.",
-      "summaryExpected": true,
       "referenceFacts": [
         "journalise"
       ],
-      "forbiddenClaims": []
+      "forbiddenClaims": [],
+      "summaryAllowed": true,
+      "summaryExpected": true
     },
     {
       "id": "synthetic:blocked-source",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": false,
       "themes": [],
       "acceptableExtraThemes": [],
       "types": [
@@ -1015,13 +1130,16 @@
       "sections": [
         "pending"
       ],
-      "ambiguous": false,
       "notes": "Fixture : source bloquée, aucun appel.",
       "expectedStatus": "skipped-blocked",
+      "summaryAllowed": false,
       "summaryExpected": false
     },
     {
       "id": "synthetic:minimal-announcement",
+      "editorialDecision": "must_keep",
+      "coveragePolicy": "selective",
+      "hardToClassify": true,
       "themes": [
         "AI_AGENTS"
       ],
@@ -1041,9 +1159,23 @@
         "main",
         "updates"
       ],
-      "ambiguous": true,
       "notes": "Fixture MINIMAL : titre seul, aucun résumé.",
+      "summaryAllowed": false,
       "summaryExpected": false
     }
+  ],
+  "revisedAt": "2026-11-06 (phase A.1)",
+  "changeLog": [
+    "Ajout de editorialDecision (must_keep / must_exclude / ambiguous), choisi explicitement par publication.",
+    "Renommage de ambiguous → hardToClassify (difficulté de classification, distincte de la décision éditoriale).",
+    "Ajout de coveragePolicy (déterministe, par source) et de summaryAllowed ; summaryExpected redéfini.",
+    "gh-angular:435859328 : relevance high → medium",
+    "gh-openai-agents:413354170 : relevance high → medium",
+    "gh-mcp-ts-sdk:422181946 : relevance high → medium",
+    "gh-claude-code:433257014 : relevance high → medium",
+    "synthetic:lumio-funding : summaryExpected true → false",
+    "synthetic:regional-agents-rules : summaryExpected true → \"if-kept\"",
+    "mit-tech-review:…?p=1144908 (« The Download ») : acceptableExclusions [null] → [\"duplicate\"] (digest reprenant des articles déjà publiés ; cohérence avec must_exclude)",
+    "synthetic:regional-agents-rules : editorialDecision ambiguous → must_keep (réglementation à impact concret sur les agents : dans le périmètre E ; reste hardToClassify), summaryExpected if-kept → true"
   ]
 }

@@ -43,7 +43,11 @@ Ou depuis ce dossier : `npm test`, `npm run prepare:eval`, `npm run budget:scena
 | `src/budget/guard.ts` | Estimation maximale, réservation atomique, réconciliation, coût incertain, libération, réservations orphelines, journal |
 | `src/budget/store.ts` | Registre en mémoire (verrou asynchrone) ou fichier JSON (verrou `mkdir`, écriture atomique, inter-processus) |
 | `src/adapters/` | Interface commune, adaptateur simulé, adaptateurs Anthropic / OpenAI désactivés |
-| `src/pipeline.ts` | Analyse d’une publication : politique → règle éditoriale → budget → appel → validation → règles de contenu → rubrique |
+| `src/pipeline.ts` | Analyse d’une publication en **un seul appel** : politique → règle éditoriale → budget → appel → validation → règles de contenu → rubrique → suppression du résumé si exclue |
+| `src/config/coverage.ts` | Couverture `mandatory` / `selective` par source (indépendante des scores IA) |
+| `src/budget/factory.ts` | `createPersistentGuard()` : garde persistant (`var/`) à utiliser pour tout appel réel |
+| `src/evaluation/summary-checks.ts` | Contrôles automatiques **indicatifs** des résumés (grille à 6 critères) |
+| `review/phase-b-manual-review.template.json` | Fiche de revue manuelle des résultats de la phase B |
 | `src/prefilter.ts` | Préfiltre déterministe en **observation** (désactivé), qui réutilise la grille du POC 1.2 |
 | `fixtures/` | 30 publications réelles (métadonnées seules), 9 fixtures synthétiques, vérité terrain séparée |
 
@@ -59,24 +63,30 @@ Une release Angular mineure peut avoir `relevance` 85 et `novelty` 1.
 
 Nombre réel de **0 à 1** produit par le modèle : sa confiance dans la classification. Les consignes demandent de l’abaisser quand seules les métadonnées sont fournies. C’est une auto-évaluation, pas une probabilité calibrée. Sa calibration (corrélation avec les erreurs mesurées contre la vérité terrain) fait partie de la phase B.
 
-### Rubriques
+### Couverture obligatoire et rubriques
 
-- `updates` : releases et nouveautés faibles (`novelty` ≤ 3 pour une release, ≤ 2 sinon) des thématiques prioritaires (Angular, IA, agents), et compilations marquées (« Video Friday »). Une exclusion proposée par le modèle pour une release prioritaire est annulée et tracée, sauf pour un doublon.
+La couverture (`coveragePolicy`) est fixée **par la source**, jamais par les thématiques renvoyées par le modèle. Les huit canaux officiels (Angular Blog, angular/angular, angular/components, TypeScript Blog, OpenAI Agents SDK, LangGraph, MCP TS SDK, Claude Code) sont `mandatory` : leurs publications restent visibles quels que soient la pertinence, la nouveauté ou le motif d’exclusion proposé par le modèle. Elles restent visibles même si l’analyse échoue (budget, erreur), avec le statut « non analysée ». La pertinence n’est jamais forcée. La couverture obligatoire ne neutralise ni les politiques de contenu, ni les règles éditoriales déterministes, ni l’exclusion pour doublon.
+
+- `updates` : releases (`novelty` ≤ 3) et nouveautés faibles des sources obligatoires, et compilations marquées (« Video Friday »).
 - `main` : le reste, y compris les versions majeures (`novelty` ≥ 4).
-- `excluded` : exclusion motivée ou règle éditoriale (« The Download »). La publication est conservée et récupérable.
+- `excluded` : exclusion motivée (sources sélectives) ou règle éditoriale (« The Download »). La publication est conservée et récupérable, **sans résumé**.
 - `pending` : publication non analysée (source bloquée, budget, erreur fournisseur, sortie invalide). Elle est conservée pour une analyse ultérieure.
 
 ### Budget
 
 Chaque appel suit le même circuit :
-1. L’estimation maximale ((entrée + sortie au plafond) × marge × taux) est **réservée** dans une transaction exclusive, avant l’appel.
+1. L’estimation maximale ((borne haute d’entrée en octets + marge, plus sortie au plafond) × marge × taux) est **réservée** dans une transaction exclusive, avant l’appel.
 2. Après l’appel, la réservation est **réconciliée** avec l’usage réel renvoyé par le fournisseur.
 3. En cas d’erreur :
-   - usage inconnu : le maximum est facturé et marqué incertain ;
+   - usage inconnu : le maximum est compté et l’entrée « incertaine » est persistée ; elle n’est jamais libérée, seule `resolveUncertain()` la solde, et un excédent devient une dette qui bloque les appels suivants ;
    - requête certainement non envoyée : la réservation est libérée sans frais.
 4. Un tarif inconnu, un plafond dépassé ou une requête trop grande entraînent un **refus avant l’appel**.
 
 La comptabilité interne reste une estimation : il faut aussi configurer des plafonds dans les consoles des fournisseurs.
+
+### Résumés et appel unique
+
+`summaryAllowed` (politique × niveau) et `summaryExpected` (résumé réellement utile) sont distincts. Une publication exclue n’a pas de résumé : la consigne l’interdit, et le pipeline supprime tout résumé produit malgré tout. Les limites de l’appel unique sont décrites dans `reports/summary-evaluation-grid.md`.
 
 ## Rapports
 
@@ -84,6 +94,9 @@ La comptabilité interne reste une estimation : il faut aussi configurer des pla
 - `reports/content-policy.md` : politiques par source et restrictions non résolues.
 - `reports/evaluation-readiness.md` : jeu d’évaluation, modes envoyés, coûts maximaux, mesure du préfiltre (généré).
 - `reports/budget-scenarios.md` : scénarios budgétaires exécutés et projections (généré).
+- `reports/budget-audit.md` : audit de la protection budgétaire, limites et protections à configurer chez les fournisseurs.
+- `reports/evaluation-dataset-quality.md` : composition et cohérence du jeu d’évaluation (généré).
+- `reports/summary-evaluation-grid.md` : grille d’évaluation des résumés et limites de l’appel unique.
 
 ## Limites connues (phase A)
 

@@ -22,7 +22,8 @@ test('fixtures : ~30 publications, couverture des catégories et niveaux demand�
   for (const t of THEMES) assert.ok(gt.some((g) => g.themes.includes(t)), t);
   for (const ty of ['release', 'feature', 'research', 'product', 'prospective_analysis']) assert.ok(gt.some((g) => g.types.includes(ty)), ty);
   assert.ok(gt.some((g) => g.acceptableExclusions.includes('promotional')));
-  assert.ok(gt.filter((g) => g.ambiguous).length >= 5);
+  assert.ok(gt.filter((g) => g.hardToClassify).length >= 5);
+  for (const d of ['must_keep', 'must_exclude', 'ambiguous']) assert.ok(gt.some((g) => g.editorialDecision === d), d);
 });
 
 test('fixtures réelles : métadonnées uniquement, aucun texte d’article tiers', () => {
@@ -53,8 +54,10 @@ test('vérité terrain : alignée sur le jeu, valeurs conformes à la taxonomie,
     const p = evaluationSet.items.find((x) => x.id === g.id)!;
     for (const fact of g.referenceFacts ?? []) assert.ok(p.text?.includes(fact), `${g.id} : fait « ${fact} » absent du texte`);
     for (const claim of g.forbiddenClaims ?? []) assert.ok(!p.text?.includes(claim) || claim.length < 4, `${g.id} : « ${claim} » ne doit pas figurer dans le texte`);
-    // Le résumé attendu correspond exactement à la politique × niveau
-    if (!g.expectedStatus) assert.equal(resolveInput(p).summaryAllowed, g.summaryExpected, `${g.id} : summaryExpected incohérent`);
+    // summaryAllowed = politique × niveau ; summaryExpected n'est jamais vrai sans autorisation ni pour une exclusion
+    assert.equal(resolveInput(p).summaryAllowed, g.summaryAllowed, `${g.id} : summaryAllowed incohérent`);
+    if (!g.summaryAllowed) assert.equal(g.summaryExpected, false, `${g.id} : résumé attendu sans autorisation`);
+    if (g.editorialDecision === 'must_exclude') assert.equal(g.summaryExpected, false, `${g.id} : résumé attendu pour une exclusion`);
   }
 });
 

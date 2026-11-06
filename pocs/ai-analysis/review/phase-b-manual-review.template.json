@@ -1,0 +1,2072 @@
+{
+  "description": "Fiche de revue manuelle des résultats de la phase B (à copier, puis remplir après les appels). Notes des résumés : 0 = insuffisant, 1 = acceptable, 2 = bon. Aucun LLM évaluateur. Les contrôles automatiques sont indicatifs.",
+  "criteria": [
+    {
+      "id": "factual_accuracy",
+      "label": "Exactitude factuelle",
+      "automatic": "indicatif (chiffres absents du texte)"
+    },
+    {
+      "id": "essential_information",
+      "label": "Présence des informations essentielles",
+      "automatic": "indicatif (faits de référence retrouvés)"
+    },
+    {
+      "id": "no_invented_claims",
+      "label": "Absence d’affirmations inventées",
+      "automatic": "indicatif (affirmations interdites retrouvées)"
+    },
+    {
+      "id": "content_level_respect",
+      "label": "Respect du niveau de contenu disponible",
+      "automatic": "fiable (présence / absence, longueur vs extrait)"
+    },
+    {
+      "id": "french_quality",
+      "label": "Qualité du français",
+      "automatic": "indicatif (langue détectée par mots fréquents)"
+    },
+    {
+      "id": "concision_usefulness",
+      "label": "Concision et utilité",
+      "automatic": "indicatif (longueur, nombre de phrases)"
+    }
+  ],
+  "reviewer": null,
+  "reviewedAt": null,
+  "models": [
+    "claude-haiku-5-5",
+    "gpt-6-luna"
+  ],
+  "items": [
+    {
+      "publicationId": "gh-angular:435859328",
+      "synthetic": false,
+      "title": "22.3.0-next.4",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "ANGULAR"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          1,
+          2
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "gh-angular:432042455",
+      "synthetic": false,
+      "title": "21.2.26",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "ANGULAR"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          1,
+          1
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "gh-angular-components:433858366",
+      "synthetic": false,
+      "title": "22.2.6",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "ANGULAR"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          1,
+          1
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "angular-blog:https://medium.com/p/9619a35e2b0a",
+      "synthetic": false,
+      "title": "An update on Angular’s TypeScript 7-powered Compiler",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "ANGULAR"
+        ],
+        "types": [
+          "feature",
+          "technical_analysis"
+        ],
+        "relevance": "high",
+        "novelty": [
+          3,
+          4
+        ],
+        "sections": [
+          "main",
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "angular-blog:https://medium.com/p/3846cae9283a",
+      "synthetic": false,
+      "title": "Signal Value Transforms, Routing Essentials, and Video Extension with Veo! ⚡",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "ANGULAR"
+        ],
+        "types": [
+          "feature",
+          "technical_analysis"
+        ],
+        "relevance": "high",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "main",
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "typescript-blog:https://devblogs.microsoft.com/typescript/?p=5473",
+      "synthetic": false,
+      "title": "Announcing TypeScript 7.1 Beta",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "ANGULAR"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "high",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "typescript-blog:https://devblogs.microsoft.com/typescript/?p=5246",
+      "synthetic": false,
+      "title": "Announcing TypeScript 7.0",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "ANGULAR"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "high",
+        "novelty": [
+          4,
+          5
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "openai-news:https://openai.com/index/introducing-gpt-6-cyber",
+      "synthetic": false,
+      "title": "GPT‑6 Cyber: Advancing the frontier of aligned cybersecurity agents",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI",
+          "DIGITAL_INNOVATION"
+        ],
+        "types": [
+          "product",
+          "research"
+        ],
+        "relevance": "high",
+        "novelty": [
+          4,
+          5
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "openai-news:https://openai.com/index/cultfit-builds-with-codex",
+      "synthetic": false,
+      "title": "Cult.fit builds operational muscle with Codex",
+      "expected": {
+        "editorialDecision": "must_exclude",
+        "coveragePolicy": "selective",
+        "themes": [],
+        "types": [
+          "product"
+        ],
+        "relevance": "low",
+        "novelty": [
+          1,
+          2
+        ],
+        "sections": [
+          "excluded"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "openai-news:https://openai.com/ads/customers/flipsnack",
+      "synthetic": false,
+      "title": "Flipsnack grows product signups with conversion optimization",
+      "expected": {
+        "editorialDecision": "must_exclude",
+        "coveragePolicy": "selective",
+        "themes": [],
+        "types": [
+          "product"
+        ],
+        "relevance": "low",
+        "novelty": [
+          1,
+          1
+        ],
+        "sections": [
+          "excluded"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "openai-news:https://openai.com/index/openai-to-acquire-pierre",
+      "synthetic": false,
+      "title": "OpenAI to acquire Pierre Computer Company, Inc.",
+      "expected": {
+        "editorialDecision": "ambiguous",
+        "coveragePolicy": "selective",
+        "themes": [],
+        "types": [
+          "product"
+        ],
+        "relevance": "low",
+        "novelty": [
+          1,
+          3
+        ],
+        "sections": [
+          "excluded",
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "openai-news:https://openai.com/index/australian-universities-ai-native-graduates",
+      "synthetic": false,
+      "title": "Australian universities are creating AI-native graduates",
+      "expected": {
+        "editorialDecision": "ambiguous",
+        "coveragePolicy": "selective",
+        "themes": [
+          "DIGITAL_INNOVATION"
+        ],
+        "types": [
+          "prospective_analysis",
+          "product"
+        ],
+        "relevance": "low",
+        "novelty": [
+          1,
+          2
+        ],
+        "sections": [
+          "excluded",
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-our-next-frontier-model/",
+      "synthetic": false,
+      "title": "Gemini 4 Carbon: Our next frontier model",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI"
+        ],
+        "types": [
+          "product",
+          "research"
+        ],
+        "relevance": "high",
+        "novelty": [
+          4,
+          5
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "deepmind-blog:https://deepmind.google/blog/genie-4-a-new-generation-of-world-simulation/",
+      "synthetic": false,
+      "title": "Genie 4: A new generation of world simulation",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI"
+        ],
+        "types": [
+          "research",
+          "product"
+        ],
+        "relevance": "high",
+        "novelty": [
+          4,
+          5
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-interactive-world-simulation",
+      "synthetic": false,
+      "title": "New NVIDIA Cosmos 3 Open Models for Interactive World Simulation",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI"
+        ],
+        "types": [
+          "product",
+          "research"
+        ],
+        "relevance": "high",
+        "novelty": [
+          3,
+          4
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "google-research:https://research.google/blog/detecting-signs-of-hypertension-using-wearable-sensors/",
+      "synthetic": false,
+      "title": "Detecting signs of hypertension using wearable sensors",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI"
+        ],
+        "types": [
+          "research"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "main",
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "simon-willison:https://simonwillison.net/2026/Nov/5/paul-ford/",
+      "synthetic": false,
+      "title": "Quoting Paul Ford",
+      "expected": {
+        "editorialDecision": "ambiguous",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI"
+        ],
+        "types": [
+          "prospective_analysis"
+        ],
+        "relevance": "low",
+        "novelty": [
+          1,
+          2
+        ],
+        "sections": [
+          "excluded",
+          "main",
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "simon-willison:https://simonwillison.net/2026/Nov/3/llm/",
+      "synthetic": false,
+      "title": "llm 0.37.1",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          1,
+          2
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "gh-openai-agents:413354170",
+      "synthetic": false,
+      "title": "v0.24.0",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "AI_AGENTS"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "gh-langgraph:436052940",
+      "synthetic": false,
+      "title": "langgraph-cli==0.4.42",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "AI_AGENTS"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          1,
+          1
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "gh-mcp-ts-sdk:422181946",
+      "synthetic": false,
+      "title": "2.4.0",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "AI_AGENTS"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "gh-claude-code:433257014",
+      "synthetic": false,
+      "title": "v2.1.318",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "mandatory",
+        "themes": [
+          "AI_AGENTS"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          1,
+          2
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "project-zero:projectzero.google/2026/05/pixel-10-exploit.html",
+      "synthetic": false,
+      "title": "A 0-click exploit chain for the Pixel 10: When a Door Closes, a Window Opens",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "DIGITAL_INNOVATION"
+        ],
+        "types": [
+          "security_advisory",
+          "technical_analysis"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          3,
+          4
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "one-useful-thing:https://www.oneusefulthing.org/p/agency-and-agents",
+      "synthetic": false,
+      "title": "Agency and Agents",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI_AGENTS"
+        ],
+        "types": [
+          "prospective_analysis"
+        ],
+        "relevance": "high",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "main",
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "mit-tech-review:https://www.technologyreview.com/?p=1148090",
+      "synthetic": false,
+      "title": "I watched a humanoid robot clean my apartment. It felt like a taste of the future.",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "DIGITAL_INNOVATION"
+        ],
+        "types": [
+          "prospective_analysis",
+          "product"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "mit-tech-review:https://www.technologyreview.com/?p=1148062",
+      "synthetic": false,
+      "title": "A new bill could change how the US builds energy infrastructure",
+      "expected": {
+        "editorialDecision": "must_exclude",
+        "coveragePolicy": "selective",
+        "themes": [],
+        "types": [
+          "prospective_analysis"
+        ],
+        "relevance": "low",
+        "novelty": [
+          1,
+          1
+        ],
+        "sections": [
+          "excluded"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "mit-tech-review:https://www.technologyreview.com/?p=1147596",
+      "synthetic": false,
+      "title": "Securing the agentic enterprise with data lineage",
+      "expected": {
+        "editorialDecision": "ambiguous",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI_AGENTS",
+          "DIGITAL_INNOVATION"
+        ],
+        "types": [
+          "technical_analysis",
+          "product"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          1,
+          2
+        ],
+        "sections": [
+          "excluded",
+          "main",
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "ieee-robotics:https://spectrum.ieee.org/video-friday-whole-body-manipulation",
+      "synthetic": false,
+      "title": "Video Friday: Spot Plays to Show Its Whole-Body Manipulation",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "DIGITAL_INNOVATION"
+        ],
+        "types": [
+          "product",
+          "research"
+        ],
+        "relevance": "low",
+        "novelty": [
+          1,
+          2
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "ieee-robotics:https://spectrum.ieee.org/ai-robot-safety-cybersecurity-vicone",
+      "synthetic": false,
+      "title": "Your Robot’s Safety Functions Already Work. What If the Input Lies?",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "DIGITAL_INNOVATION"
+        ],
+        "types": [
+          "technical_analysis"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "synthetic:angular-99",
+      "synthetic": true,
+      "title": "[SYNTHÉTIQUE] Angular 99.0 introduit l’API fictive deriveSignal()",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "ANGULAR"
+        ],
+        "types": [
+          "release",
+          "feature"
+        ],
+        "relevance": "high",
+        "novelty": [
+          3,
+          4
+        ],
+        "sections": [
+          "main",
+          "updates"
+        ],
+        "summaryExpected": true
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "synthetic:orion-multimodal",
+      "synthetic": true,
+      "title": "[SYNTHÉTIQUE] Le laboratoire fictif Orion publie un modèle multimodal open source de 7 milliards de paramètres",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI"
+        ],
+        "types": [
+          "research",
+          "product"
+        ],
+        "relevance": "high",
+        "novelty": [
+          3,
+          4
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": true
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "synthetic:mcp-async-tasks",
+      "synthetic": true,
+      "title": "[SYNTHÉTIQUE] La spécification fictive MCP 2099-01 ajoute les tâches asynchrones",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI_AGENTS"
+        ],
+        "types": [
+          "feature"
+        ],
+        "relevance": "high",
+        "novelty": [
+          3,
+          4
+        ],
+        "sections": [
+          "main",
+          "updates"
+        ],
+        "summaryExpected": true
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "synthetic:orchestrajs-32",
+      "synthetic": true,
+      "title": "[SYNTHÉTIQUE] OrchestraJS 3.2 (fictif) : reprise après panne des agents",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI_AGENTS"
+        ],
+        "types": [
+          "release"
+        ],
+        "relevance": "high",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "updates"
+        ],
+        "summaryExpected": true
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "synthetic:lumio-funding",
+      "synthetic": true,
+      "title": "[SYNTHÉTIQUE] La start-up fictive Lumio lève 40 millions d’euros",
+      "expected": {
+        "editorialDecision": "must_exclude",
+        "coveragePolicy": "selective",
+        "themes": [],
+        "types": [
+          "product"
+        ],
+        "relevance": "low",
+        "novelty": [
+          1,
+          1
+        ],
+        "sections": [
+          "excluded"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "synthetic:logical-qubits",
+      "synthetic": true,
+      "title": "[SYNTHÉTIQUE] Démonstration fictive de 48 qubits logiques avec correction d’erreurs",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "DIGITAL_INNOVATION"
+        ],
+        "types": [
+          "breakthrough",
+          "research"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          4,
+          5
+        ],
+        "sections": [
+          "main"
+        ],
+        "summaryExpected": true
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "synthetic:regional-agents-rules",
+      "synthetic": true,
+      "title": "[SYNTHÉTIQUE] Une région fictive encadre l’usage des agents IA dans les services publics",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "DIGITAL_INNOVATION",
+          "AI_AGENTS"
+        ],
+        "types": [
+          "prospective_analysis"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          2,
+          3
+        ],
+        "sections": [
+          "main",
+          "updates"
+        ],
+        "summaryExpected": true
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": {
+            "factual_accuracy": null,
+            "essential_information": null,
+            "no_invented_claims": null,
+            "content_level_respect": null,
+            "french_quality": null,
+            "concision_usefulness": null
+          },
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "publicationId": "synthetic:minimal-announcement",
+      "synthetic": true,
+      "title": "[SYNTHÉTIQUE] Annonce fictive d’un nouvel outil d’agents de test",
+      "expected": {
+        "editorialDecision": "must_keep",
+        "coveragePolicy": "selective",
+        "themes": [
+          "AI_AGENTS"
+        ],
+        "types": [
+          "product"
+        ],
+        "relevance": "medium",
+        "novelty": [
+          1,
+          3
+        ],
+        "sections": [
+          "main",
+          "updates"
+        ],
+        "summaryExpected": false
+      },
+      "results": [
+        {
+          "model": "claude-haiku-5-5",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        },
+        {
+          "model": "gpt-6-luna",
+          "classification": {
+            "themesOk": null,
+            "typeOk": null,
+            "relevanceOk": null,
+            "noveltyOk": null,
+            "decisionOk": null,
+            "sectionOk": null
+          },
+          "summary": "sans objet",
+          "notes": ""
+        }
+      ]
+    }
+  ]
+}

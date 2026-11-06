@@ -18,7 +18,8 @@ export const ANALYSIS_JSON_SCHEMA = {
     subthemes: { type: 'array', items: { type: 'string' } },
     type: { type: 'string', enum: [...PUBLICATION_TYPES] },
     relevance: { type: 'integer', description: 'Pertinence personnelle, entier de 0 à 100' },
-    novelty: { type: 'integer', enum: [1, 2, 3, 4, 5], description: 'Importance de la nouveauté, 1 à 5' },
+    // Pas d'enum entier : non documenté côté Anthropic (phase A.1) ; borne 1–5 vérifiée localement.
+    novelty: { type: 'integer', description: 'Importance de la nouveauté, entier de 1 à 5' },
     confidence: { type: 'number', description: 'Confiance de 0 à 1' },
     relevanceReason: { type: 'string' },
     summary: { type: ['string', 'null'] },

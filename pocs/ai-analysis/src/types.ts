@@ -67,6 +67,8 @@ export interface AnalysisRecord {
   synthetic: boolean;
   contentLevel: ContentLevel;
   contentPolicy: ContentPolicy;
+  /** Couverture obligatoire ou sélective, déterminée par la source (indépendante des scores IA). */
+  coveragePolicy: 'mandatory' | 'selective';
   inputMode: InputMode;
   status: AnalysisStatus;
   section: Section;

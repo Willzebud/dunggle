@@ -1,5 +1,5 @@
 import type { ModelConfig } from '../config/models.js';
-import { RealCallsDisabledError, type AIAdapter, type AnalysisRequest, type AnalysisResponse } from './types.js';
+import { RealCallsDisabledError, type AIAdapter, type AnalysisRequest, type AnalysisResponse, type ProviderUsage } from './types.js';
 
 /**
  * PHASE A : aucun appel réel. Cette constante n'est PAS pilotable par variable d'environnement,
@@ -67,4 +67,48 @@ export class OpenAIAdapter implements AIAdapter {
     buildOpenAIParams(this.model, req);
     throw new RealCallsDisabledError('openai');
   }
+}
+
+/** Raisons empêchant tout appel réel pour un modèle (en plus de REAL_CALLS_ENABLED). */
+export function realCallBlockers(model: ModelConfig): string[] {
+  const b: string[] = [];
+  if (!REAL_CALLS_ENABLED) b.push('Appels réels désactivés en phase A (REAL_CALLS_ENABLED = false)');
+  if (model.provider === 'mock') b.push('Modèle simulé');
+  if (model.validation.status !== 'validated') b.push(`Configuration non validée : ${model.validation.blockers.join(' ; ')}`);
+  if (!model.pricing) b.push('Tarif non vérifié');
+  return b;
+}
+
+/**
+ * Usage Anthropic → usage facturable. `output_tokens` est documenté comme total facturé incluant la
+ * réflexion. Les tokens de cache (non utilisés par Dunggle) sont comptés au prix d'entrée, l'écriture
+ * en cache majorée ×2 (pire cas documenté : écriture 1 h).
+ */
+export function normalizeAnthropicUsage(u: {
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_input_tokens?: number | null;
+  cache_read_input_tokens?: number | null;
+  output_tokens_details?: { thinking_tokens?: number } | null;
+}): ProviderUsage {
+  return {
+    inputTokens: u.input_tokens + 2 * (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0),
+    outputTokens: u.output_tokens,
+    reasoningTokens: u.output_tokens_details?.thinking_tokens,
+  };
+}
+
+/**
+ * Usage OpenAI → usage facturable, de manière PRUDENTE : l'inclusion de reasoning_tokens dans
+ * output_tokens n'est que déduite d'un exemple. On compte donc output + reasoning, plafonné par
+ * max_output_tokens (qui, lui, borne explicitement raisonnement + sortie visible + formatage).
+ * Si output_tokens dépasse déjà le plafond, la valeur déclarée est conservée (jamais sous-estimée).
+ */
+export function normalizeOpenAIUsage(
+  u: { input_tokens: number; output_tokens: number; input_tokens_details?: { cached_tokens?: number } | null; output_tokens_details?: { reasoning_tokens?: number } | null },
+  maxOutputTokens: number,
+): ProviderUsage {
+  const reasoning = u.output_tokens_details?.reasoning_tokens ?? 0;
+  const output = Math.max(u.output_tokens, Math.min(u.output_tokens + reasoning, maxOutputTokens));
+  return { inputTokens: u.input_tokens, outputTokens: output, reasoningTokens: reasoning };
 }
