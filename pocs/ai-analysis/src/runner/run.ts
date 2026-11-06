@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { BudgetGuard } from '../budget/guard.js';
 import type { AIAdapter } from '../adapters/types.js';
-import { apiKeyConfigured } from '../adapters/real.js';
+import { apiKeyConfigured, apiKeyFormatProblem } from '../adapters/real.js';
 import { MODELS } from '../config/models.js';
-import { POC_PHASES } from '../config/quotas.js';
+import { POC_PHASES, PROVIDER_MIN_INTERVAL_MS } from '../config/quotas.js';
 import { analyzePublication } from '../pipeline.js';
 import { activationAllows, type RealCallActivation } from '../security/activation.js';
 import type { AnalysisRecord } from '../types.js';
@@ -16,6 +16,9 @@ export interface RunDeps {
   /** Activation en mémoire issue d'une autorisation locale consommée (null : aucun appel réel possible). */
   activation: RealCallActivation | null;
   env: NodeJS.ProcessEnv;
+  /** Horloge et attente injectables (tests hors ligne). */
+  now?: () => number;
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export interface RunReport {
@@ -39,7 +42,10 @@ export async function realRunBlockers(args: RunArgs, plan: RunPlan, deps: Omit<R
   for (const k of new Set(plan.calls.map((c) => c.modelKey))) {
     const m = MODELS[k];
     if (!m || m.validation.status !== 'validated') b.push(`${k} : configuration non validée`);
-    if (m && !apiKeyConfigured(m.provider === 'anthropic' ? 'anthropic' : 'openai', deps.env)) b.push(`${k} : clé API absente de l’environnement`);
+    const prov = m?.provider === 'anthropic' ? 'anthropic' : 'openai';
+    if (m && !apiKeyConfigured(prov, deps.env)) b.push(`${k} : clé API absente de l’environnement`);
+    const fmt = m ? apiKeyFormatProblem(prov, deps.env) : null;
+    if (fmt) b.push(`${k} : ${fmt}`);
   }
   const s = await deps.guard.snapshot();
   const uncertain = Object.keys(s.uncertain).length;
@@ -73,6 +79,9 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
   const records: AnalysisRecord[] = [];
   let spent = 0;
   let stoppedReason: string | null = null;
+  const now = deps.now ?? Date.now;
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const lastCallAt = new Map<string, number>();
   for (const call of plan.calls) {
     if (records.length >= plan.maxCalls) {
       stoppedReason = 'plafond d’appels de l’exécution atteint';
@@ -82,6 +91,14 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
       stoppedReason = 'montant confirmé (--confirm-max-eur) atteint';
       break;
     }
+    // Respect des limites de débit fournisseur (ex. OpenAI 1 requête/minute) AVANT la réservation.
+    const provider = MODELS[call.modelKey].provider === 'anthropic' ? 'anthropic' : 'openai';
+    const last = lastCallAt.get(provider);
+    if (last !== undefined) {
+      const wait = last + PROVIDER_MIN_INTERVAL_MS[provider] - now();
+      if (wait > 0) await sleep(wait);
+    }
+    lastCallAt.set(provider, now());
     const rec = await analyzePublication(call.publication, { adapter: deps.adapterFor(call.modelKey), guard: deps.guard, scope: 'trial', quota });
     records.push(rec);
     spent += rec.costEur ?? 0;

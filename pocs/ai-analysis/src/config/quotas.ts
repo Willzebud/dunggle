@@ -47,3 +47,10 @@ export type QuotaContext = { scope: 'operational'; runId: string } | { scope: 't
  * - Ordre : couverture obligatoire d'abord, puis les plus récentes.
  */
 export const PENDING_POLICY = Object.freeze({ maxAgeDays: 14, maxBacklog: 100 });
+
+/**
+ * Espacement minimal entre deux requêtes RÉELLES vers un même fournisseur, dans une exécution.
+ * OpenAI : projet `dunggle-poc` limité à 1 requête par minute → 61 s (marge d'une seconde). Une requête
+ * refusée en 429 serait comptée dans les quotas (transmise) et arrêterait l'exécution : on l'évite en amont.
+ */
+export const PROVIDER_MIN_INTERVAL_MS: Readonly<Record<'anthropic' | 'openai', number>> = Object.freeze({ anthropic: 0, openai: 61_000 });

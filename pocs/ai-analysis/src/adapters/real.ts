@@ -17,6 +17,22 @@ export function apiKeyConfigured(provider: 'anthropic' | 'openai', env: NodeJS.P
 }
 
 /**
+ * Cohérence du FORMAT de la clé avec le fournisseur (sans jamais renvoyer la valeur) : empêche d'envoyer une clé
+ * à un autre fournisseur (variables inversées). Anthropic : préfixe `sk-ant-` ; OpenAI : préfixe `sk-` hors `sk-ant-`.
+ */
+export function apiKeyFormatProblem(provider: 'anthropic' | 'openai', env: NodeJS.ProcessEnv = process.env): string | null {
+  const v = (provider === 'anthropic' ? env.ANTHROPIC_API_KEY : env.OPENAI_API_KEY)?.trim();
+  if (!v) return null;
+  if (provider === 'anthropic' && !v.startsWith('sk-ant-')) {
+    return v.startsWith('sk-') ? 'ANTHROPIC_API_KEY contient une clé au format OpenAI (variables inversées ?)' : 'ANTHROPIC_API_KEY : format non reconnu (préfixe sk-ant- attendu)';
+  }
+  if (provider === 'openai' && (v.startsWith('sk-ant-') || !v.startsWith('sk-'))) {
+    return v.startsWith('sk-ant-') ? 'OPENAI_API_KEY contient une clé au format Anthropic (variables inversées ?)' : 'OPENAI_API_KEY : format non reconnu (préfixe sk- attendu)';
+  }
+  return null;
+}
+
+/**
  * Paramètres de `client.messages.create(...)` (Messages API), vérifiés le 2026-11-06 :
  * sortie structurée via `output_config.format` (type "json_schema"). La réflexion adaptative de
  * Claude Haiku 5.5 est active par défaut ; `effort: "low"` limite son coût, et `max_tokens`
@@ -95,6 +111,8 @@ function assertEnabled(activation: RealCallActivation | null, provider: string, 
   if (!apiKeyConfigured(model.provider === 'anthropic' ? 'anthropic' : 'openai', env)) {
     throw new ProviderError('auth', 'Clé API absente de l’environnement : appel refusé avant envoi', false);
   }
+  const fmt = apiKeyFormatProblem(model.provider === 'anthropic' ? 'anthropic' : 'openai', env);
+  if (fmt) throw new ProviderError('auth', `${fmt} : appel refusé avant envoi`, false);
 }
 
 export class AnthropicAdapter implements AIAdapter {

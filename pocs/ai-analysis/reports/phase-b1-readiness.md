@@ -104,3 +104,11 @@ Coût maximal réservé : **0,001411 €** (Haiku 5.5) + **0,001639 €** (GPT-6
 3. Lire la liste de contrôle affichée pour chaque modèle (authentification, schéma, classification, résumé, tokens facturés, cache, coût ≤ réservé).
 4. Comparer avec les consoles des fournisseurs, puis remplir `review/phase-b-manual-review.template.json` (copie dans `var/`).
 5. En cas de coût incertain : ne rien relancer, relever l’usage réel dans la console, puis réconcilier.
+
+## 7. Vérification finale avant B.1 (2026-11-06)
+
+- **Chargement des clés** : `evaluate:real` lit `pocs/ai-analysis/.env` (`src/security/env-file.ts`). Seules `ANTHROPIC_API_KEY` et `OPENAI_API_KEY` sont chargées ; le shell reste prioritaire ; le fichier est refusé s’il est lisible par d’autres (droits 600 exigés) ou non ignoré par Git ; aucun message ne contient de valeur.
+- **Format des clés** : une exécution réelle est refusée, avant toute réservation, si une clé n’a pas le préfixe de son fournisseur (`sk-ant-` pour Anthropic, `sk-` hors `sk-ant-` pour OpenAI). Cela empêche d’envoyer une clé au mauvais fournisseur.
+- **Limite OpenAI de 1 requête/minute** : au moins 61 s entre deux requêtes réelles OpenAI d’une même exécution (`PROVIDER_MIN_INTERVAL_MS`). Sans effet sur B.1 (une requête OpenAI). Un 429 n’est jamais relancé : il est compté et arrête l’exécution.
+- **À traiter avant B.2** : avec cet espacement, B.2 dure environ 38 minutes, au-delà de l’activation en mémoire (30 minutes). Les appels suivants seraient refusés avant envoi, ce qui est sûr mais incomplet. Il faudra ajuster la durée pour B.2.
+- Tests : 11/11 et 135/135 (dont 9 nouveaux : `tests/b1-preflight.test.ts`).

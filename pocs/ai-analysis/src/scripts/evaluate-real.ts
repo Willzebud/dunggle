@@ -22,6 +22,8 @@ import { executeRun, realRunBlockers } from '../runner/run.js';
 import { smokeChecks, type SmokeGroundTruth } from '../runner/smoke-checks.js';
 import { redactSecrets } from '../security/redact.js';
 import type { PublicationInput } from '../types.js';
+import { EnvFileError, loadLocalEnv } from '../security/env-file.js';
+import { apiKeyConfigured, apiKeyFormatProblem } from '../adapters/real.js';
 
 let args;
 try {
@@ -32,6 +34,25 @@ try {
     process.exit(2);
   }
   throw e;
+}
+
+// Clés API : environnement du shell (prioritaire), sinon pocs/ai-analysis/.env (non versionné, droits 600).
+// Aucune valeur n'est jamais affichée ni journalisée : seulement les noms des variables.
+const envPath = new URL('../../.env', import.meta.url).pathname;
+try {
+  const r = loadLocalEnv(envPath);
+  if (r.found) console.log(`Fichier .env : ${r.loaded.length ? `chargé (${r.loaded.join(', ')})` : 'aucune nouvelle variable'}${r.keptFromShell.length ? ` ; conservées depuis le shell : ${r.keptFromShell.join(', ')}` : ''}${r.ignored.length ? ` ; ignorées : ${r.ignored.join(', ')}` : ''}`);
+} catch (e) {
+  if (e instanceof EnvFileError) {
+    console.error(`Fichier .env refusé : ${e.message}`);
+    process.exit(2);
+  }
+  throw e;
+}
+console.log(`Clés détectées (valeurs non affichées) : Anthropic ${apiKeyConfigured('anthropic') ? 'oui' : 'non'}, OpenAI ${apiKeyConfigured('openai') ? 'oui' : 'non'}`);
+for (const p of ['anthropic', 'openai'] as const) {
+  const f = apiKeyFormatProblem(p);
+  if (f) console.warn(`⚠️ ${f}`);
 }
 
 const items = (JSON.parse(await readFile(new URL('../../fixtures/evaluation-set.json', import.meta.url), 'utf8')) as { items: PublicationInput[] }).items;
