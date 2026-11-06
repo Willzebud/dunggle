@@ -121,3 +121,34 @@ test('grille : affirmation interdite, chiffre inventé, anglais et résumé non 
   const ifKeptExcluded = autoCheckSummary({ ...base, summary: null, summaryExpected: 'if-kept', kept: false });
   assert.equal(ifKeptExcluded[0].verdict, 'pass');
 });
+
+// ------------------------------------------------------------------ cohérence ensemble / éligibles
+import { readFileSync } from 'node:fs';
+import { decisionCounts, isEligible, subsetConsistencyErrors, DECISIONS } from '../src/evaluation/dataset.js';
+
+test('cohérence : effectifs éligibles ≤ effectifs globaux, sommes exactes', () => {
+  const all = groundTruth.items;
+  const elig = all.filter((g) => isEligible(byId(g.id)));
+  const cAll = decisionCounts(all);
+  const cElig = decisionCounts(elig);
+  assert.deepEqual(subsetConsistencyErrors(cAll, cElig, { all: all.length, subset: elig.length }), []);
+  for (const d of DECISIONS) assert.ok(cElig[d] <= cAll[d], d);
+  // Les non-éligibles expliquent exactement l'écart
+  const nonElig = decisionCounts(all.filter((g) => !isEligible(byId(g.id))));
+  for (const d of DECISIONS) assert.equal(cAll[d], cElig[d] + nonElig[d], d);
+  assert.deepEqual(subsetConsistencyErrors({ must_keep: 1, must_exclude: 0, ambiguous: 4 }, { must_keep: 1, must_exclude: 0, ambiguous: 5 }, { all: 5, subset: 6 }), ['ambiguous : 5 éligibles > 4 au total', 'sous-ensemble plus grand que l’ensemble'], 'détecte les incohérences');
+});
+
+test('cohérence : le rapport evaluation-readiness.md est à jour avec les données', () => {
+  const md = readFileSync(new URL('../reports/evaluation-readiness.md', import.meta.url), 'utf8');
+  const all = groundTruth.items;
+  const elig = all.filter((g) => isEligible(byId(g.id)));
+  const fmt = (c: Record<string, number>) => Object.entries(c).map(([k, v]) => `${k} ${v}`).join(', ');
+  assert.ok(md.includes(`ensemble des ${all.length} publications** : ${fmt(decisionCounts(all))}`), 'effectifs globaux');
+  assert.ok(md.includes(`Sur les ${elig.length} éligibles** : ${fmt(decisionCounts(elig))}`), 'effectifs éligibles');
+  const c = decisionCounts(elig);
+  assert.match(md, new RegExp(`\\| \`must_keep\` \\| ${c.must_keep} \\|`));
+  assert.match(md, new RegExp(`\\| \`must_exclude\` \\| ${c.must_exclude} \\|`));
+  assert.match(md, new RegExp(`\\| \`ambiguous\` \\(hors erreurs\\) \\| ${c.ambiguous} \\|`));
+  assert.ok(!/\b5 décisions `ambiguous`|11 publications `hardToClassify`/.test(md), 'plus aucun effectif codé en dur');
+});

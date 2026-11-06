@@ -113,7 +113,8 @@ export class BudgetGuard {
     }
     const tier = priceTier(model, inputTokensUpperBound);
     if (!tier) throw new BudgetRefusedError('unknown-pricing', `Aucun palier tarifaire vérifié pour ${inputTokensUpperBound} tokens d’entrée (${modelKey})`);
-    const usd = (inputTokensUpperBound * tier.inputUsdPerMTok + maxOutputTokens * tier.outputUsdPerMTok) / 1e6;
+    const inputPrice = tier.inputUsdPerMTok * (tier.worstCaseInputMultiplier ?? 1);
+    const usd = (inputTokensUpperBound * inputPrice + maxOutputTokens * tier.outputUsdPerMTok) / 1e6;
     return round6(usd * this.limits.safetyMultiplier * this.limits.eurPerUsd);
   }
 

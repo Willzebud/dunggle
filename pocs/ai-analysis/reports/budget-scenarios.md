@@ -35,7 +35,7 @@
 | Modèle | Coût max d’une requête au plafond (16000 / 800 tokens) | Coût max d’une requête « métadonnées » (borne ~3 600 tokens) | Analyses au pire cas dans 0,50 € | Analyses au pire cas dans 8 €/mois |
 |---|---|---|---|---|
 | claude-haiku-5-5 | 0.002500 € | 0.000950 € | 200 | 3200 |
-| gpt-6-luna | 0.002500 € | 0.000950 € | 200 | 3200 |
+| gpt-6-luna | 0.003000 € | 0.001062 € | 166 | 2666 |
 
 À environ 390 publications par mois (POC 1.2), même le pire cas (≈ 1 € par mois) reste très inférieur au budget opérationnel. Le plafond qui s’applique en premier en pratique est le budget d’essai de 0,50 €.
 

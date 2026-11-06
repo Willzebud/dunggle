@@ -43,19 +43,36 @@ test('estimation : coût MAXIMAL (sortie au plafond complet, réflexion comprise
   // pire cas réel possible : 5000 tokens d'entrée + 800 tokens de sortie (max_tokens borne réflexion + texte)
   const worst = g.actualCostEur('anthropic-haiku-5-5', 5000, 800);
   assert.ok(est >= worst, `${est} ≥ ${worst}`);
+  // OpenAI : le pire cas inclut une écriture en cache à 1,25× sur toute l'entrée
+  const luna = g.estimateMaxCostEur('openai-gpt-6-luna', 5000);
+  assert.ok(luna >= g.actualCostEur('openai-gpt-6-luna', Math.ceil(5000 * 1.25), 800), 'écriture en cache 30 min couverte');
   // les requêtes construites imposent ce même plafond au fournisseur
   const req = { system: 's', user: 'u', schema: ANALYSIS_JSON_SCHEMA, maxOutputTokens: DEFAULT_LIMITS.maxOutputTokensPerRequest };
   assert.equal(buildAnthropicParams(MODELS['anthropic-haiku-5-5'], req).max_tokens, 800);
-  assert.equal(buildOpenAIParams(MODELS['openai-gpt-6-luna'], req).max_output_tokens, 800);
+  const o = buildOpenAIParams(MODELS['openai-gpt-6-luna'], req);
+  assert.equal(o.max_output_tokens, 800);
+  assert.deepEqual(o.prompt_cache_options, { mode: 'explicit' }, 'aucune écriture en cache demandée');
+  assert.ok(!('cache_control' in buildAnthropicParams(MODELS['anthropic-haiku-5-5'], req)), 'pas de mise en cache Anthropic');
 });
 
 test('tokens de raisonnement : normalisation Anthropic (inclusifs) et OpenAI (prudente, plafonnée)', () => {
   assert.deepEqual(normalizeAnthropicUsage({ input_tokens: 1000, output_tokens: 600, output_tokens_details: { thinking_tokens: 400 } }), { inputTokens: 1000, outputTokens: 600, reasoningTokens: 400 });
   assert.equal(normalizeAnthropicUsage({ input_tokens: 1000, output_tokens: 10, cache_creation_input_tokens: 100, cache_read_input_tokens: 50 }).inputTokens, 1250);
-  // OpenAI : output + raisonnement, plafonné par max_output_tokens (jamais sous l'output déclaré)
-  assert.equal(normalizeOpenAIUsage({ input_tokens: 900, output_tokens: 300, output_tokens_details: { reasoning_tokens: 200 } }, 800).outputTokens, 500);
-  assert.equal(normalizeOpenAIUsage({ input_tokens: 900, output_tokens: 700, output_tokens_details: { reasoning_tokens: 600 } }, 800).outputTokens, 800);
-  assert.equal(normalizeOpenAIUsage({ input_tokens: 900, output_tokens: 850 }, 800).outputTokens, 850);
+  // OpenAI : output_tokens inclut le raisonnement (documenté) → pris tel quel
+  assert.deepEqual(normalizeOpenAIUsage({ input_tokens: 75, output_tokens: 1186, output_tokens_details: { reasoning_tokens: 1024 } }), { inputTokens: 75, outputTokens: 1186, reasoningTokens: 1024 });
+  // Exemple officiel du guide prompt-caching : 12 000 entrées dont 4 000 lues et 7 000 écrites (ici 30 min)
+  const ex = normalizeOpenAIUsage({ input_tokens: 12000, output_tokens: 10, input_tokens_details: { cached_tokens: 4000, cache_write_tokens: 7000, cache_write_tokens_details: { ttl_30m_tokens: 7000, ttl_12h_tokens: 0 } } });
+  assert.equal(ex.inputTokens, 5000 + 8750); // (1 000 ordinaires + 4 000 lectures à 1×, prudent) + 7 000 × 1,25
+  // Écritures sans détail : pire cas 2,5×
+  assert.equal(normalizeOpenAIUsage({ input_tokens: 1000, output_tokens: 1, input_tokens_details: { cache_write_tokens: 1000 } }).inputTokens, 2500);
+});
+
+test('validation documentaire : aucune information essentielle au niveau « résumé », « déduit » ou « absent »', () => {
+  for (const k of ['anthropic-haiku-5-5', 'openai-gpt-6-luna']) {
+    const weak = MODELS[k].validation.checks.filter((c) => c.evidence !== 'verbatim');
+    assert.deepEqual(weak.map((c) => c.item), [], `${k} : preuves non textuelles`);
+    for (const c of MODELS[k].validation.checks) assert.match(c.source, /^https:\/\/(platform\.claude\.com|developers\.openai\.com)\//, c.item);
+  }
 });
 
 test('tarifs : palier long contexte appliqué ; modèle non validé refusé ; appels réels bloqués', () => {

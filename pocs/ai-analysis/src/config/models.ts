@@ -8,6 +8,11 @@ export interface PriceTier {
   maxInputTokens: number | null;
   inputUsdPerMTok: number;
   outputUsdPerMTok: number;
+  /**
+   * Multiplicateur du prix d'entrée dans le PIRE cas (estimation maximale) : écriture en cache facturée
+   * automatiquement par le fournisseur. 1 si aucune écriture ne peut être facturée sans demande explicite.
+   */
+  worstCaseInputMultiplier?: number;
 }
 
 /** Niveau de preuve d'une information : texte officiel cité, résumé d'une page officielle, déduction, ou absent. */
@@ -50,6 +55,9 @@ const OAI_PRICING = 'https://developers.openai.com/api/docs/pricing';
 const OAI_MODEL = 'https://developers.openai.com/api/docs/models/gpt-6-luna';
 const OAI_REASONING = 'https://developers.openai.com/api/docs/guides/reasoning';
 const OAI_SO = 'https://developers.openai.com/api/docs/guides/structured-outputs';
+const OAI_CACHE = 'https://developers.openai.com/api/docs/guides/prompt-caching';
+const OAI_TOKENS = 'https://developers.openai.com/api/docs/guides/token-counting';
+const ANT_COST = 'https://platform.claude.com/docs/en/build-with-claude/thinking-steering-and-cost';
 
 export const MODELS: Record<string, ModelConfig> = {
   'anthropic-haiku-5-5': {
@@ -61,7 +69,7 @@ export const MODELS: Record<string, ModelConfig> = {
       { maxInputTokens: null, inputUsdPerMTok: 0.5, outputUsdPerMTok: 2.5 },
     ],
     verifiedAt: '2026-11-06',
-    sources: [ANT_PRICING, ANT_MODELS, ANT_SO, ANT_THINK],
+    sources: [ANT_PRICING, ANT_MODELS, ANT_SO, ANT_THINK, ANT_COST],
     structuredOutput: 'Messages API : output_config.format = { type: "json_schema", schema }',
     billingNotes: [
       'Réflexion adaptative (toujours disponible) facturée comme sortie ; max_tokens borne réflexion + réponse ; usage.output_tokens est le total facturé.',
@@ -77,15 +85,19 @@ export const MODELS: Record<string, ModelConfig> = {
         { item: 'Tarif > 100K tokens', evidence: 'verbatim', value: '0,50 $ / 2,50 $ par MTok', source: ANT_PRICING },
         { item: 'Sortie structurée output_config.format json_schema', evidence: 'verbatim', value: 'pris en charge ; claude-haiku-5-5 listé', source: ANT_SO },
         { item: 'max_tokens borne la réflexion', evidence: 'verbatim', value: '« max_tokens remains the hard ceiling on total output »', source: ANT_THINK },
-        { item: 'Réflexion facturée en sortie, incluse dans output_tokens', evidence: 'verbatim', value: '« output_tokens remains the inclusive, authoritative total used for billing »', source: ANT_THINK },
-        { item: 'Unions ["string","null"] et enum avec null', evidence: 'summary', value: 'autorisés (limite de 16 paramètres en union)', source: ANT_SO },
-        { item: 'Enum d’entiers', evidence: 'not-stated', value: 'non documenté → retiré du schéma (novelty validé localement)', source: ANT_SO },
-        { item: 'Surcoût du prompt de sortie structurée', evidence: 'summary', value: 'tokens d’entrée « légèrement » supérieurs ; couvert par la marge forfaitaire', source: ANT_SO },
+        { item: 'Réflexion facturée en sortie', evidence: 'verbatim', value: '« Tokens Claude uses while thinking (billed as output tokens) »', source: ANT_COST },
+        { item: 'Réflexion incluse dans output_tokens', evidence: 'verbatim', value: '« output_tokens remains the inclusive, authoritative total used for billing »', source: ANT_COST },
+        { item: 'Unions ["string","null"]', evidence: 'verbatim', value: '« type arrays (for example, "type": ["string", "null"]) » comptés dans la limite de 16 paramètres en union', source: ANT_SO },
+        { item: 'Enum avec null', evidence: 'verbatim', value: '« enum (strings, numbers, booleans, or nulls only, no complex types) »', source: ANT_SO },
+        { item: 'additionalProperties', evidence: 'verbatim', value: '« required and additionalProperties (must be set to false for objects) »', source: ANT_SO },
+        { item: 'Contraintes numériques', evidence: 'verbatim', value: 'non prises en charge (minimum, maximum) → bornes vérifiées localement', source: ANT_SO },
+        { item: 'Surcoût du prompt de sortie structurée', evidence: 'verbatim', value: '« Your input token count is slightly higher » ; couvert par la marge forfaitaire', source: ANT_SO },
+        { item: 'Mise en cache', evidence: 'verbatim', value: 'activée uniquement via cache_control (non envoyé par Dunggle) → aucune écriture facturée', source: ANT_PRICING },
       ],
       blockers: [],
       firstRequestChecks: [
-        'Schéma accepté sans erreur 400 (unions avec null, enum de exclusionReason incluant null).',
-        'Écart entre input_tokens réel et borne haute (mesure du prompt injecté).',
+        'Écart entre input_tokens réel et borne haute (taille réelle du prompt injecté par la sortie structurée).',
+        'Absence de cache_creation_input_tokens dans l’usage.',
       ],
     },
   },
@@ -94,15 +106,19 @@ export const MODELS: Record<string, ModelConfig> = {
     provider: 'openai',
     modelId: 'gpt-6-luna',
     pricing: [
-      { maxInputTokens: 272_000, inputUsdPerMTok: 0.1, outputUsdPerMTok: 0.5 },
-      { maxInputTokens: null, inputUsdPerMTok: 0.2, outputUsdPerMTok: 0.75 },
+      // Mise en cache activée par défaut (écritures 30 min à 1,25×) : couverte dans l'estimation maximale,
+      // et désactivée dans la requête (prompt_cache_options.mode = "explicit" sans point d'arrêt).
+      { maxInputTokens: 272_000, inputUsdPerMTok: 0.1, outputUsdPerMTok: 0.5, worstCaseInputMultiplier: 1.25 },
+      { maxInputTokens: null, inputUsdPerMTok: 0.2, outputUsdPerMTok: 0.75, worstCaseInputMultiplier: 1.25 },
     ],
     verifiedAt: '2026-11-06',
-    sources: [OAI_PRICING, OAI_MODEL, OAI_REASONING, OAI_SO],
+    sources: [OAI_PRICING, OAI_MODEL, OAI_REASONING, OAI_SO, OAI_CACHE, OAI_TOKENS],
     structuredOutput: 'Responses API : text.format = { type: "json_schema", name, schema, strict: true }',
     billingNotes: [
       'Tokens de raisonnement facturés en sortie ; max_output_tokens borne raisonnement + sortie visible + formatage.',
-      'Inclusion des tokens de raisonnement dans usage.output_tokens : seulement déduite d’un exemple → normalisation prudente (voir normalizeOpenAIUsage).',
+      'usage.output_tokens inclut tous les tokens générés, raisonnement compris (guide token-counting).',
+      'Mise en cache activée par défaut ; écritures facturées 1,25× (30 min) ou 2,5× (12 h, sur demande) → désactivée par prompt_cache_options.mode = "explicit" sans point d’arrêt ; estimation maximale à 1,25× par prudence.',
+      'Contenu système caché ajouté par OpenAI (« OpenAI-provided hidden system content ») : couvert par la marge forfaitaire.',
       'Au-delà de 272K tokens d’entrée : 2× entrée, 1,5× sortie (palier modélisé).',
     ],
     maxOutputTokensProvider: 128_000,
@@ -115,13 +131,18 @@ export const MODELS: Record<string, ModelConfig> = {
         { item: 'Sortie structurée', evidence: 'verbatim', value: '« structured_outputs » dans les fonctionnalités du modèle', source: OAI_MODEL },
         { item: 'Raisonnement facturé en sortie', evidence: 'verbatim', value: '« billed as output tokens »', source: OAI_REASONING },
         { item: 'max_output_tokens borne le raisonnement', evidence: 'verbatim', value: '« including reasoning tokens, visible output tokens, and non-visible formatting tokens »', source: OAI_REASONING },
-        { item: 'reasoning_tokens inclus dans output_tokens', evidence: 'inferred', value: 'déduit de l’exemple d’usage ; normalisation prudente', source: OAI_REASONING },
-        { item: 'Mode strict : required complet, additionalProperties:false, unions avec null', evidence: 'summary', value: 'conformes au schéma Dunggle', source: OAI_SO },
+        { item: 'Raisonnement inclus dans output_tokens', evidence: 'verbatim', value: '« Reported output token usage includes all tokens generated by the model […] reports this total as output_tokens »', source: OAI_TOKENS },
+        { item: 'Mode strict : champs required', evidence: 'verbatim', value: '« all fields or function parameters must be specified as required »', source: OAI_SO },
+        { item: 'Mode strict : additionalProperties', evidence: 'verbatim', value: '« additionalProperties: false must always be set in objects »', source: OAI_SO },
+        { item: 'Unions avec null', evidence: 'verbatim', value: '« emulate an optional parameter by using a union type with null »', source: OAI_SO },
+        { item: 'Enum avec null', evidence: 'verbatim', value: 'exemple officiel « "enum": ["violence", "sexual", "self_harm", null] »', source: OAI_SO },
+        { item: 'Mise en cache par défaut et écritures facturées', evidence: 'verbatim', value: '« Prompt caching is enabled by default » ; « cache writes cost 1.25× » (GPT-5.6 et suivants)', source: OAI_CACHE },
+        { item: 'Désactivation des écritures', evidence: 'verbatim', value: '« When no explicit breakpoints are placed, the request does not use prompt caching or create cache writes » (mode explicit)', source: OAI_CACHE },
       ],
       blockers: [],
       firstRequestChecks: [
-        'Schéma accepté en mode strict (enum incluant null pour exclusionReason).',
-        'Structure de usage (output_tokens vs output_tokens_details.reasoning_tokens) sur une réponse réelle.',
+        'input_tokens_details.cache_write_tokens = 0 (mode explicit sans point d’arrêt effectif).',
+        'Écart entre input_tokens réel et borne haute (contenu système caché + sortie structurée).',
       ],
     },
   },

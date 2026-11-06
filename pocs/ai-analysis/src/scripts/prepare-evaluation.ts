@@ -13,8 +13,10 @@ import { BudgetGuard } from '../budget/guard.js';
 import { MemoryBudgetStore } from '../budget/store.js';
 import { resolveInput } from '../content-policy.js';
 import { buildPrompt } from '../prompt.js';
-import { evaluatePrefilter, prefilterHint, PREFILTER_ENABLED, type EditorialDecision } from '../prefilter.js';
+import { evaluatePrefilter, prefilterHint, PREFILTER_ENABLED } from '../prefilter.js';
+import type { EditorialDecision } from '../evaluation/dataset.js';
 import { SUMMARY_CRITERIA } from '../evaluation/summary-checks.js';
+import { decisionCounts, isEligible, subsetConsistencyErrors } from '../evaluation/dataset.js';
 import type { PublicationInput } from '../types.js';
 
 interface GT {
@@ -45,12 +47,15 @@ const rows = set.items.map((p) => {
   const input = resolveInput(p);
   const g = gtFile.items.find((x) => x.id === p.id)!;
   const editorialSkip = p.editorial?.action === 'excluded';
-  const eligible = input.mode !== 'none' && !editorialSkip;
+  const eligible = isEligible(p);
   const prompt = buildPrompt(p, input);
   const costs = Object.fromEntries(CANDIDATE_MODEL_KEYS.map((k) => [k, eligible ? guard.estimateMaxCostEur(k, prompt.inputTokensUpperBound) : 0]));
   return { p, g, input, eligible, editorialSkip, typical: prompt.inputTokensEstimate, bound: prompt.inputTokensUpperBound, costs, hint: prefilterHint(p) };
 });
 const eligible = rows.filter((r) => r.eligible);
+const countsAll = decisionCounts(rows.map((r) => r.g));
+const countsEligible = decisionCounts(eligible.map((r) => r.g));
+const subsetErrors = subsetConsistencyErrors(countsAll, countsEligible, { all: rows.length, subset: eligible.length });
 const pf = evaluatePrefilter(eligible.map((r) => ({ id: r.p.id, hint: r.hint, decision: r.g.editorialDecision })));
 const count = <T>(xs: T[], f: (x: T) => string) => xs.reduce<Record<string, number>>((m, x) => ((m[f(x)] = (m[f(x)] ?? 0) + 1), m), {});
 const fmt = (o: Record<string, number>) => Object.entries(o).map(([k, v]) => `${k} ${v}`).join(', ');
@@ -62,7 +67,9 @@ const L: string[] = ['# POC 2 — Préparation de l’évaluation (phase A.1)', 
 L.push(`> Généré par \`npm run prepare:eval\` le ${today}. **Aucun appel à un modèle.** Coûts = MAXIMA : borne haute d’entrée (octets UTF-8 + ${2000} tokens de marge pour le formatage et le prompt injecté par la sortie structurée), sortie au plafond de ${DEFAULT_LIMITS.maxOutputTokensPerRequest} tokens (réflexion comprise), marge ×${DEFAULT_LIMITS.safetyMultiplier}, 1 USD compté 1 EUR.`, '');
 L.push('## 1. Synthèse', '');
 L.push(`- ${set.items.length} publications ; **${eligible.length} éligibles à l’IA** (non éligibles : ${rows.filter((r) => r.input.mode === 'none').length} source bloquée, ${rows.filter((r) => r.editorialSkip).length} exclusion éditoriale tracée).`);
-L.push(`- Décisions éditoriales (vérité terrain) : ${fmt(count(rows, (r) => r.g.editorialDecision))}. Couverture : ${fmt(count(rows, (r) => r.g.coveragePolicy))}.`);
+L.push(`- Décisions éditoriales, **ensemble des ${rows.length} publications** : ${fmt(countsAll)}. **Sur les ${eligible.length} éligibles** : ${fmt(countsEligible)}. Couverture : ${fmt(count(rows, (r) => r.g.coveragePolicy))}.`);
+L.push(`- Publications non éligibles : ${rows.filter((r) => !r.eligible).map((r) => `\`${r.p.id}\` (${r.g.editorialDecision})`).join(', ')}.`);
+L.push(`- Cohérence ensemble / sous-ensemble : ${subsetErrors.length ? `❌ ${subsetErrors.join(' ; ')}` : '✅ effectifs éligibles ≤ effectifs globaux, sommes exactes'}.`);
 L.push(`- Résumés : autorisés pour ${rows.filter((r) => r.g.summaryAllowed).length} publications, attendus pour ${rows.filter((r) => r.g.summaryExpected === true).length} (+ ${rows.filter((r) => r.g.summaryExpected === 'if-kept').length} « si conservée »). Toutes sont synthétiques.`);
 L.push(`- Modes envoyés : ${fmt(count(rows, (r) => (r.eligible ? r.input.mode : 'aucun appel')))}.`, '');
 
@@ -99,7 +106,7 @@ L.push('4. Aucun second LLM évaluateur.', '');
 L.push('## 6. Limites de représentativité', '');
 L.push('- 39 publications choisies à la main pour couvrir les cas, pas un échantillon aléatoire du flux réel (environ 13 publications par jour).');
 L.push('- Les 30 publications réelles sont en `metadata-only` : seule la classification sur titre et métadonnées y sera mesurée. Les résumés ne seront évalués que sur 7 fixtures synthétiques, courtes et en français, alors que les articles réels sont surtout en anglais.');
-L.push('- La vérité terrain a été rédigée par l’assistant : elle doit être relue, en particulier les 5 décisions `ambiguous` et les 11 publications `hardToClassify`.', '');
+L.push(`- La vérité terrain a été rédigée par l’assistant : elle doit être relue, en particulier les ${countsAll.ambiguous} décisions \`ambiguous\` et les ${rows.filter((r) => r.g.hardToClassify).length} publications \`hardToClassify\`.`, '');
 await writeFile(new URL('reports/evaluation-readiness.md', root), L.join('\n'));
 
 // ------------------------------------------------------------------ evaluation-dataset-quality.md
@@ -176,4 +183,4 @@ const template = {
 await mkdir(new URL('review/', root), { recursive: true });
 await writeFile(new URL('review/phase-b-manual-review.template.json', root), JSON.stringify(template, null, 2));
 console.log(`evaluation-readiness.md, evaluation-dataset-quality.md (${issues.length} incohérence(s)), review template (${eligible.length} publications). Préfiltre : FN=${pf.mustKeep.falseNegatives} FP=${pf.mustExclude.falsePositives} ambigus écartés=${pf.ambiguous.skipped}`);
-if (issues.length) process.exitCode = 1;
+if (issues.length || subsetErrors.length) process.exitCode = 1;

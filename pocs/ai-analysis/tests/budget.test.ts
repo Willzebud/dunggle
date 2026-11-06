@@ -19,7 +19,8 @@ test('budget : estimation prudente = (entrée + sortie max) × marge × taux, ta
   const g = new BudgetGuard(new MemoryBudgetStore(), limits(), undefined, fixedNow);
   // (3000 × 0,10 + 800 × 0,50) / 1e6 = 0,0007 $ ; × 1,25 × 1,00 = 0,000875 €
   assert.equal(g.estimateMaxCostEur('anthropic-haiku-5-5', 3000, 800), 0.000875);
-  assert.equal(g.estimateMaxCostEur('openai-gpt-6-luna', 3000, 800), 0.000875);
+  // gpt-6-luna : entrée au pire cas d'écriture en cache (1,25×) : (3000 × 0,125 + 800 × 0,50)/1e6 × 1,25
+  assert.equal(g.estimateMaxCostEur('openai-gpt-6-luna', 3000, 800), 0.000969);
 });
 
 test('budget : tarif inconnu → refus avant tout appel', async () => {
