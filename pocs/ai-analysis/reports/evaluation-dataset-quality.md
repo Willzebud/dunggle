@@ -1,6 +1,6 @@
 # POC 2 — Qualité du jeu d’évaluation (phase A.1)
 
-> Généré par `npm run prepare:eval` le 2026-11-06. Vérité terrain révisée : 2026-11-06 (préparation B.2 : release retiré d’OrionVision, Gemini 4 Carbon et Cosmos 3).
+> Généré par `npm run prepare:eval` le 2026-11-06. Vérité terrain révisée : 2026-11-06 (préparation B.2 : Gemini 4 Carbon aligné sur Genie 4).
 
 ## Composition
 
@@ -13,7 +13,7 @@
 | Niveau de contenu | FULL 22, PARTIAL 13, MINIMAL 4 |
 | Bande de pertinence | medium 16, high 13, low 10 |
 | Thématique principale attendue | ANGULAR 8, AI 8, (aucune : exclusion) 7, DIGITAL_INNOVATION 7, AI_AGENTS 9 |
-| Type principal attendu | release 12, feature 3, product 10, prospective_analysis 7, research 3, security_advisory 1, technical_analysis 2, breakthrough 1 |
+| Type principal attendu | release 12, feature 3, product 9, prospective_analysis 7, research 4, security_advisory 1, technical_analysis 2, breakthrough 1 |
 | Résumé attendu | false 33, true 6 |
 
 ## Indépendance des dimensions (exemples présents dans le jeu)
@@ -50,6 +50,9 @@
 - huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-i : types ["product","release","research"] → ["product","research"] (titre seul (MINIMAL) ; « Open Models » établit la mise à disposition (product), mais le numéro « 3 » ne suffit pas à établir une release)
 - synthetic:orion-multimodal : types ["product","release","research"] → ["product","research"] (le texte compare le score d’OrionVision à « la version précédente du même laboratoire » sans présenter OrionVision comme une nouvelle version d’un modèle existant ; une comparaison ne suffit pas)
 - ieee-robotics:…video-friday-whole-body-manipulation : inchangé ["research","product"] (titre : démonstration de manipulation ; disponibilité de la capacité non établie)
+- Vérification Gemini 4 Carbon / Genie 4 (même règle : research si la disponibilité n’est pas établie par les métadonnées) :
+- deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-o : types ["product","research"] → ["research","product"] (titre seul « Gemini 4 Carbon: Our next frontier model » : annonce d’un modèle sans disponibilité établie (ni API, ni poids, ni accès) ; aligné sur Genie 4)
+- deepmind-blog:https://deepmind.google/blog/genie-4-a-new-gen : inchangé ["research","product"] (titre seul « Genie 4: A new generation of world simulation » : disponibilité non établie)
 
 ## Sources à couverture obligatoire
 
