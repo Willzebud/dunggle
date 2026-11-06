@@ -81,7 +81,7 @@ test('tarifs : palier long contexte appliqué ; modèle non validé refusé ; ap
   assert.throws(() => g.estimateMaxCostEur('openai-gpt-5-nano', 100), (e) => code(e) === 'model-not-validated');
   for (const k of ['anthropic-haiku-5-5', 'openai-gpt-6-luna']) {
     assert.equal(MODELS[k].validation.status, 'validated');
-    assert.ok(realCallBlockers(MODELS[k]).some((b) => b.includes('REAL_CALLS_ENABLED')));
+    assert.ok(realCallBlockers(MODELS[k]).some((b) => b.startsWith('Activation')), 'aucune activation : appel bloqué');
   }
 });
 

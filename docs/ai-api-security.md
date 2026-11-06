@@ -9,6 +9,8 @@
 3. **Tout appel payant passe par le garde budgétaire persistant** (réservation du maximum, idempotence, arrêt sur incertitude). Aucun chemin de code ne l’évite.
 4. **Les limites des fournisseurs sont indépendantes et indispensables.** Le garde applicatif ne protège pas contre une clé volée utilisée ailleurs.
 5. **Pas de relance automatique non budgétée.** SDK configurés avec `maxRetries: 0` ; toute nouvelle tentative est une nouvelle réservation.
+6. **Quotas d’appels persistants**, vérifiés avec le budget dans la même transaction : 20 par jour (Europe/Paris), 10 par exécution, 500 par mois en production. Ils comptent les tentatives transmises, tous fournisseurs confondus.
+7. **Aucune activation permanente des appels réels.** Une exécution réelle consomme une autorisation locale à usage unique (15 minutes, non versionnée) ; l’activation n’existe qu’en mémoire.
 
 ## Règles pour le futur backend [NestJS]
 
@@ -19,6 +21,8 @@
 | File de traitement | Les analyses passent par une file persistante à **un seul consommateur** (ou un verrou distribué) ; l’idempotence (modèle × publication × version du prompt) est imposée en base par une contrainte d’unicité |
 | Budget en base | Le registre budgétaire (réservations, coûts incertains, compteur monotone) migre en base transactionnelle (MongoDB avec transactions, ou équivalent), en conservant les mêmes invariants et le journal en ajout seul |
 | Limitation de débit | Par utilisateur et globale sur les routes déclenchant des analyses ; le scheduler a un verrou d’exécution unique |
+| Quotas | Reprendre `PRODUCTION_QUOTAS` (20/jour Europe/Paris, 10/exécution, 500/mois) et la file `selectPending` (couverture obligatoire en premier, 100 candidates par cycle, expiration à 14 jours) ; compteurs en base, dans la même transaction que le budget |
+| Activation | En production, l’activation provient de la configuration du déploiement, revue et non modifiable par l’API ; jamais d’une requête client |
 | Secrets | Variables d’environnement du déploiement ou gestionnaire de secrets ; jamais dans l’image, le dépôt ou la configuration Angular ; rotation et expiration courtes |
 | Frontend Angular | Aucune clé, aucun appel direct aux fournisseurs ; seul le backend parle aux API IA |
 | Journalisation | Masquage systématique (`redactSecrets`) ; pas de corps de requête ni de réponse brute dans les journaux de production |

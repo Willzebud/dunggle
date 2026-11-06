@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, rmdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import type { QuotaContext } from '../config/quotas.js';
 
 export interface Reservation {
   id: string;
@@ -13,7 +14,23 @@ export interface Reservation {
   createdAt: string;
   /** Clé d'idempotence de l'analyse couverte par cette réservation. */
   idempotencyKey?: string;
+  /** Compteurs de quota incrémentés par cette réservation (décomptés seulement si la requête n'a pas été transmise). */
+  quota?: { context: QuotaContext; dailyKey: string; monthlyKey: string };
 }
+
+/** Compteurs de tentatives d'appels (persistants, jamais remis à zéro au redémarrage). */
+export interface QuotaCounters {
+  /** `${scope}|AAAA-MM-JJ` (jour Europe/Paris) → tentatives. */
+  daily: Record<string, number>;
+  /** `${scope}|AAAA-MM` (mois Europe/Paris) → tentatives. */
+  monthly: Record<string, number>;
+  /** identifiant d'exécution → tentatives. */
+  runs: Record<string, number>;
+  /** phase du POC (B1, B2) → tentatives totales et par modèle (cumulatives). */
+  phases: Record<string, { total: number; perModel: Record<string, number> }>;
+}
+
+export const emptyQuotas = (): QuotaCounters => ({ daily: {}, monthly: {}, runs: {}, phases: {} });
 
 /** Appel envoyé dont la facturation réelle est inconnue : compté au maximum tant qu'il n'est pas réconcilié. */
 export interface UncertainEntry {
@@ -47,6 +64,7 @@ export interface LedgerState {
   analyses: Record<string, AnalysisEntry>;
   /** Nombre total de réservations jamais faites (monotone) : détecte un registre restauré ou réinitialisé. */
   sequence: number;
+  quotas: QuotaCounters;
 }
 
 export interface AnalysisEntry {
@@ -59,7 +77,7 @@ export interface AnalysisEntry {
   result?: unknown;
 }
 
-export const emptyState = (): LedgerState => ({ version: 1, months: {}, days: {}, trial: { spentEur: 0, reservedEur: 0 }, reservations: {}, uncertain: {}, analyses: {}, sequence: 0 });
+export const emptyState = (): LedgerState => ({ version: 1, months: {}, days: {}, trial: { spentEur: 0, reservedEur: 0 }, reservations: {}, uncertain: {}, analyses: {}, sequence: 0, quotas: emptyQuotas() });
 
 /**
  * Stockage du registre budgétaire. `transaction` exécute `fn` de manière exclusive :
@@ -92,6 +110,7 @@ export class MemoryBudgetStore implements BudgetStore {
     this.state = structuredClone(initial);
     this.state.analyses ??= {};
     this.state.sequence ??= 0;
+    this.state.quotas ??= emptyQuotas();
   }
   transaction<T>(fn: (state: LedgerState) => T): Promise<T> {
     return this.mutex.run(async () => {
@@ -147,6 +166,7 @@ export class FileBudgetStore implements BudgetStore {
       s.uncertain ??= {}; // registres créés avant la phase A.1
       s.analyses ??= {}; // registres créés avant la phase B.0
       s.sequence ??= Object.keys(s.reservations).length;
+      s.quotas ??= emptyQuotas(); // registres créés avant la phase B.0.1
       return s;
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code === 'ENOENT') return emptyState();

@@ -23,6 +23,16 @@ import { ArgsError, parseArgs } from '../src/runner/args.js';
 import { planRun, SMOKE_FIXTURE_ID } from '../src/runner/plan.js';
 import { executeRun, type RunDeps } from '../src/runner/run.js';
 import type { AIAdapter } from '../src/adapters/types.js';
+import { createGrant, consumeGrant, confirmationPhrase, type RealCallActivation } from '../src/security/activation.js';
+
+/** Activation de test : obtenue par le circuit réel (autorisation locale créée puis consommée dans un dossier temporaire). */
+let ACT: RealCallActivation;
+before(async () => {
+  const dir = `${await mkdtemp(join(tmpdir(), 'dunggle-act-'))}/`;
+  const models = ['anthropic-haiku-5-5', 'openai-gpt-6-luna'];
+  await createGrant({ phase: 'B1', models, maxEur: 0.05, confirm: confirmationPhrase('B1', 0.05) }, dir);
+  ACT = await consumeGrant(dir, { phase: 'B1', models, maxEur: 0.05 });
+});
 
 before(forbidNetwork);
 
@@ -70,7 +80,7 @@ test('A — les erreurs SDK sont masquées et la clé n’apparaît jamais dans 
 
 test('A — adaptateur activé mais clé absente : refus AVANT envoi, client jamais créé', async () => {
   let created = false;
-  const a = new AnthropicAdapter(MODELS['anthropic-haiku-5-5'], async () => ((created = true), { messages: { create: async () => ({}) } }), true, {});
+  const a = new AnthropicAdapter(MODELS['anthropic-haiku-5-5'], async () => ((created = true), { messages: { create: async () => ({}) } }), ACT, {});
   await assert.rejects(a.analyze({ system: 's', user: 'u', schema: {}, maxOutputTokens: 800 }), (e) => e instanceof ProviderError && e.kind === 'auth' && e.requestSent === false);
   assert.equal(created, false);
 });
@@ -305,13 +315,13 @@ function depsWith(guard: BudgetGuard, opts: { enabled?: boolean; env?: NodeJS.Pr
     if (!adapters.has(k)) adapters.set(k, okAdapter({}, MODELS[k]));
     return adapters.get(k)!;
   });
-  return { guard, adapterFor, realCallsEnabled: opts.enabled ?? true, env: opts.env ?? fakeEnv, calls: () => [...adapters.values()].reduce((s, a) => s + a.calls.length, 0) };
+  return { guard, adapterFor, activation: opts.enabled === false ? null : ACT, env: opts.env ?? fakeEnv, calls: () => [...adapters.values()].reduce((s, a) => s + a.calls.length, 0) };
 }
 
 test('E — exécution réelle refusée sans activation de code, sans clé, ou avec un montant confirmé insuffisant', async () => {
   const cases: [string[], Partial<{ enabled: boolean; env: NodeJS.ProcessEnv }>, RegExp][] = [
     [[], {}, /Mode simulation/],
-    [['--real', '--confirm-max-eur=0.05'], { enabled: false }, /REAL_CALLS_ENABLED = false/],
+    [['--real', '--confirm-max-eur=0.05'], { enabled: false }, /Aucune activation valide/],
     [['--real', '--confirm-max-eur=0.05'], { env: {} }, /clé API absente/],
     [['--real'], {}, /--confirm-max-eur absent/],
     [['--real', '--confirm-max-eur=0.000001'], {}, /< coût maximal du plan/],
@@ -341,6 +351,9 @@ test('E — adaptateurs réels : interrupteur figé, SDK sans relance automatiqu
   assert.deepEqual(SDK_OPTIONS, { maxRetries: 0, timeout: 60_000 });
   await assert.rejects(new AnthropicAdapter(MODELS['anthropic-haiku-5-5']).analyze({ system: 's', user: 'u', schema: {}, maxOutputTokens: 800 }), /désactivés/);
   await assert.rejects(new OpenAIAdapter(MODELS['openai-gpt-6-luna']).analyze({ system: 's', user: 'u', schema: {}, maxOutputTokens: 800 }), /désactivés/);
+  // Une fausse activation fabriquée à la main est rejetée.
+  const forged = { phase: 'B1', models: ['anthropic-haiku-5-5'], maxEur: 1, nonce: 'x', validUntil: Date.now() + 1e9 } as unknown as RealCallActivation;
+  await assert.rejects(new AnthropicAdapter(MODELS['anthropic-haiku-5-5'], undefined, forged, fakeEnv).analyze({ system: 's', user: 'u', schema: {}, maxOutputTokens: 800 }), /désactivés/);
   assert.equal(classifySdkError({ status: 401, message: 'bad key' }).requestSent, false);
   assert.equal(classifySdkError({ status: 429, message: 'limit' }).requestSent, false);
   assert.equal(classifySdkError({ status: 400, message: 'spend limit reached' }).requestSent, false);
@@ -352,20 +365,20 @@ test('E — adaptateurs réels : interrupteur figé, SDK sans relance automatiqu
 test('E — adaptateurs réels avec faux clients : paramètres transmis, usage normalisé, refus et sortie tronquée', async () => {
   const req = { system: 's', user: 'u', schema: { type: 'object' }, maxOutputTokens: 800 };
   let antParams: Record<string, unknown> = {};
-  const ant = new AnthropicAdapter(MODELS['anthropic-haiku-5-5'], async () => ({ messages: { create: async (p) => ((antParams = p), { content: [{ type: 'text', text: '{"a":1}' }], stop_reason: 'end_turn', usage: { input_tokens: 1000, output_tokens: 300, output_tokens_details: { thinking_tokens: 100 } } }) } }), true, fakeEnv);
+  const ant = new AnthropicAdapter(MODELS['anthropic-haiku-5-5'], async () => ({ messages: { create: async (p) => ((antParams = p), { content: [{ type: 'text', text: '{"a":1}' }], stop_reason: 'end_turn', usage: { input_tokens: 1000, output_tokens: 300, output_tokens_details: { thinking_tokens: 100 } } }) } }), ACT, fakeEnv);
   const r = await ant.analyze(req);
   assert.equal(r.rawText, '{"a":1}');
   assert.deepEqual(r.usage, { inputTokens: 1000, outputTokens: 300, reasoningTokens: 100 });
   assert.equal(antParams.max_tokens, 800);
-  const refused = new AnthropicAdapter(MODELS['anthropic-haiku-5-5'], async () => ({ messages: { create: async () => ({ content: [], stop_reason: 'refusal', usage: { input_tokens: 50, output_tokens: 2 } }) } }), true, fakeEnv);
+  const refused = new AnthropicAdapter(MODELS['anthropic-haiku-5-5'], async () => ({ messages: { create: async () => ({ content: [], stop_reason: 'refusal', usage: { input_tokens: 50, output_tokens: 2 } }) } }), ACT, fakeEnv);
   await assert.rejects(refused.analyze(req), (e) => e instanceof ProviderError && e.kind === 'refusal' && e.usage?.inputTokens === 50);
   let oaiParams: Record<string, unknown> = {};
-  const oai = new OpenAIAdapter(MODELS['openai-gpt-6-luna'], async () => ({ responses: { create: async (p) => ((oaiParams = p), { status: 'incomplete', output_text: '{"tronq', output: [], usage: { input_tokens: 900, output_tokens: 800, input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 } } }) } }), true, fakeEnv);
+  const oai = new OpenAIAdapter(MODELS['openai-gpt-6-luna'], async () => ({ responses: { create: async (p) => ((oaiParams = p), { status: 'incomplete', output_text: '{"tronq', output: [], usage: { input_tokens: 900, output_tokens: 800, input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 } } }) } }), ACT, fakeEnv);
   const o = await oai.analyze(req);
   assert.equal(o.stopReason, 'incomplete');
   assert.equal(o.usage?.outputTokens, 800);
   assert.deepEqual(oaiParams.prompt_cache_options, { mode: 'explicit' });
-  const sdkFail = new OpenAIAdapter(MODELS['openai-gpt-6-luna'], async () => ({ responses: { create: async () => Promise.reject(Object.assign(new Error('Internal error'), { status: 500 })) } }), true, fakeEnv);
+  const sdkFail = new OpenAIAdapter(MODELS['openai-gpt-6-luna'], async () => ({ responses: { create: async () => Promise.reject(Object.assign(new Error('Internal error'), { status: 500 })) } }), ACT, fakeEnv);
   await assert.rejects(sdkFail.analyze(req), (e) => e instanceof ProviderError && e.requestSent === true);
   assert.equal(networkCalls.length, 0, 'aucun accès réseau');
   assert.ok(PROMPT_VERSION.length === 12);

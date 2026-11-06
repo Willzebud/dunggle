@@ -22,6 +22,7 @@
     "poc2:prepare": "npm run prepare:eval -w @dunggle/ai-analysis",
     "poc2:budget": "npm run budget:scenarios -w @dunggle/ai-analysis",
     "poc2:evaluate": "npm run evaluate:real -w @dunggle/ai-analysis --",
-    "check:secrets": "npm run check:secrets -w @dunggle/ai-analysis"
+    "check:secrets": "npm run check:secrets -w @dunggle/ai-analysis",
+    "poc2:authorize": "npm run authorize:real -w @dunggle/ai-analysis --"
   }
 }

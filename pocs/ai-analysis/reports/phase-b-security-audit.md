@@ -2,6 +2,8 @@
 
 > Audit réalisé le 2026-11-06 sur le **code réel** (commit de départ `509482b`), **entièrement hors ligne**. Aucun appel payant, aucune clé créée, appels réels toujours désactivés.
 > Un verdict GO signifie que le système est **techniquement prêt**. Ce n’est **pas** une autorisation de dépenser.
+>
+> **Mise à jour B.0.1** : quotas d’appels ajoutés, et l’activation par commit de `REAL_CALLS_ENABLED` est remplacée par une **autorisation locale à usage unique**. Voir `phase-b1-readiness.md`, qui fait foi pour les prérequis et le plan de B.1.
 
 ## 1. Risques identifiés et gravité
 
@@ -23,7 +25,8 @@
 | D4 | Réinitialisation du budget (suppression ou restauration du registre) | Élevée | **Corrigé partiellement** : détection via le journal ; résiduel si le journal est aussi supprimé |
 | D5 | Modification des plafonds à l’exécution | Moyenne | **Corrigé** : plafonds gelés (`Object.freeze`) |
 | E1 | Argument CLI non validé (`--trial-cap=…`, `--no-budget`) | Élevée | **Corrigé** : analyse stricte, aucune option ne relève un plafond |
-| E2 | Appel réel déclenché sans autorisation | Critique | Protégé : 7 verrous indépendants (§ 8) |
+| E2 | Appel réel déclenché sans autorisation | Critique | Protégé : verrous indépendants (§ 8 et `phase-b1-readiness.md` § 3) |
+| C3 bis | Volume d’appels non borné dans le temps | Élevée | **Corrigé en B.0.1** : quotas persistants (20/jour, 10/exécution, 500/mois en production ; quotas de phase pour le POC) |
 
 ## 2. Protections déjà en place (vérifiées dans le code)
 
@@ -98,7 +101,7 @@ Voir `docs/ai-api-security.md` : authentification de toute route déclenchant un
 
 Les 7 verrous de l’exécuteur doivent tous être levés, et un seul suffit à bloquer :
 1. Autorisation explicite de votre part pour B.1.
-2. Commit revu passant `REAL_CALLS_ENABLED` à `true`.
+2. ~~Commit revu passant `REAL_CALLS_ENABLED` à `true`~~ → remplacé en B.0.1 par une autorisation locale à usage unique (`npm run poc2:authorize`).
 3. Option `--real`.
 4. `--confirm-max-eur` ≥ coût maximal du plan (et ≤ 0,50 €).
 5. Clé présente dans l’environnement pour chaque modèle appelé.

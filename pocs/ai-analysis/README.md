@@ -27,14 +27,15 @@ Ou depuis ce dossier : `npm test`, `npm run prepare:eval`, `npm run budget:scena
 ```bash
 npm run evaluate:real                                   # simulation du smoke test (défaut, aucun appel)
 npm run evaluate:real -- --mode=full --dry-run          # simulation de l’évaluation complète
-npm run evaluate:real -- --model=anthropic-haiku-5-5 --real --confirm-max-eur=0.002   # réel : BLOQUÉ en B.0
+npm run authorize:real -- --phase=B1 --models=anthropic-haiku-5-5,openai-gpt-6-luna --max-eur=0.004 --confirm="AUTORISER B1 0.004 EUR"
+npm run evaluate:real -- --mode=smoke --real --confirm-max-eur=0.004   # réel : exige l’autorisation ci-dessus
 ```
 
-Options autorisées : `--model=<clé>|all`, `--mode=smoke|full`, `--dry-run`, `--real`, `--confirm-max-eur=<€ ≤ 0,50>`, `--max-calls=<n>` (abaisse seulement le plafond). Toute autre option est refusée. Un appel réel exige les 7 verrous décrits dans `reports/phase-b-security-audit.md` § 8. Les analyses déjà terminées ou incertaines ne sont jamais refacturées lors d’une reprise.
+Options autorisées : `--model=<clé>|all`, `--mode=smoke|full`, `--dry-run`, `--real`, `--confirm-max-eur=<€ ≤ 0,50>`, `--max-calls=<n>` (abaisse seulement le plafond). Toute autre option est refusée. Un appel réel exige tous les verrous décrits dans `reports/phase-b1-readiness.md` § 3 (autorisation locale à usage unique, quotas, budget, clés, registre cohérent). Les analyses déjà terminées ou incertaines ne sont jamais refacturées lors d’une reprise.
 
 ## Garanties de la phase A
 
-- `REAL_CALLS_ENABLED = false` est **figé dans le code** et n’est pas pilotable par variable d’environnement. Les adaptateurs réels (SDK officiels, `maxRetries: 0`) lèvent `RealCallsDisabledError` avant tout envoi.
+- **Aucune activation permanente** : les adaptateurs réels (SDK officiels, `maxRetries: 0`) lèvent `RealCallsDisabledError` sans activation en mémoire issue d’une autorisation locale à usage unique.
 - Aucun `fetch` dans le POC ; les SDK fournisseurs ne sont chargés (import dynamique) que dans `src/adapters/real.ts`, derrière les verrous. Un test le vérifie, et tous les tests remplacent `fetch` par une fonction qui échoue.
 - Les clés API proviendraient des variables d’environnement (voir `.env.example`). Elles ne sont ni lues ni affichées en phase A, seule leur présence peut être testée.
 - L’état budgétaire et les journaux locaux vont dans `var/`, qui est ignoré par Git.

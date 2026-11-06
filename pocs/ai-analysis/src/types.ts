@@ -52,6 +52,7 @@ export type AnalysisStatus =
   | 'skipped-editorial'
   | 'skipped-duplicate'
   | 'refused-budget'
+  | 'refused-quota'
   | 'refused-unknown-pricing'
   | 'provider-error'
   | 'invalid-output';

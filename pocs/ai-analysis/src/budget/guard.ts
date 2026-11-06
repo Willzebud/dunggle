@@ -5,6 +5,8 @@ import { DEFAULT_LIMITS, type BudgetLimits } from '../config/budget.js';
 import { MODELS, type ModelConfig, type PriceTier } from '../config/models.js';
 import type { AnalysisEntry, BudgetStore, LedgerState, Reservation, UncertainEntry } from './store.js';
 import { redactDeep, redactSecrets } from '../security/redact.js';
+import { POC_PHASES, PRODUCTION_QUOTAS, type ProductionQuotas, type QuotaContext } from '../config/quotas.js';
+import { parisDay, parisMonth } from '../quota/time.js';
 
 export type RefusalCode =
   | 'unknown-pricing'
@@ -17,7 +19,12 @@ export type RefusalCode =
   | 'invalid-limits'
   | 'unknown-reservation'
   | 'uncertain-pending'
-  | 'duplicate-analysis';
+  | 'duplicate-analysis'
+  | 'quota-daily'
+  | 'quota-monthly'
+  | 'quota-run'
+  | 'quota-phase-total'
+  | 'quota-phase-model';
 
 export class BudgetRefusedError extends Error {
   constructor(
@@ -93,6 +100,7 @@ export class BudgetGuard {
     private readonly logger: UsageLogger = new MemoryUsageLogger(),
     private readonly now: () => Date = () => new Date(),
     private readonly models: Record<string, ModelConfig> = MODELS,
+    readonly productionQuotas: Readonly<ProductionQuotas> = PRODUCTION_QUOTAS,
   ) {
     const errors = validateLimits(limits);
     if (errors.length) throw new BudgetRefusedError('invalid-limits', errors.join(' ; '));
@@ -136,8 +144,8 @@ export class BudgetGuard {
   }
 
   /** Réserve le coût maximal AVANT tout appel. Refuse (sans rien réserver) si un plafond serait dépassé. */
-  async reserve(req: { modelKey: string; inputTokensEstimate: number; maxOutputTokens?: number; scope?: 'trial' | 'operational'; idempotencyKey?: string }): Promise<Reservation> {
-    const scope = req.scope ?? 'trial';
+  async reserve(req: { modelKey: string; inputTokensEstimate: number; maxOutputTokens?: number; scope?: 'trial' | 'operational'; idempotencyKey?: string; quota?: QuotaContext }): Promise<Reservation> {
+    const scope = req.quota?.scope ?? req.scope ?? 'trial';
     const maxOut = req.maxOutputTokens ?? this.limits.maxOutputTokensPerRequest;
     const { month, day, at } = this.keys();
     let est: number;
@@ -159,6 +167,8 @@ export class BudgetGuard {
         if (req.idempotencyKey && s.analyses[req.idempotencyKey]) {
           throw new BudgetRefusedError('duplicate-analysis', `Analyse déjà ${s.analyses[req.idempotencyKey].status} : ${req.idempotencyKey}`);
         }
+        // Quotas d'appels (vérifiés avec le budget, comptés seulement si la réservation est acceptée).
+        const commitQuota = req.quota ? this.checkQuota(s, req.quota, req.modelKey) : null;
         const m = (s.months[month] ??= { spentEur: 0, reservedEur: 0, uncertainEur: 0 });
         const dd = (s.days[day] ??= { analyses: 0 });
         if (dd.analyses >= L.dailyMaxAnalyses) throw new BudgetRefusedError('daily-limit', `Quota quotidien atteint (${L.dailyMaxAnalyses} analyses)`);
@@ -171,6 +181,7 @@ export class BudgetGuard {
         }
         const r: Reservation = { id: randomUUID(), modelKey: req.modelKey, scope, estimatedMaxEur: est, inputTokensEstimate: req.inputTokensEstimate, maxOutputTokens: maxOut, month, day, createdAt: at, idempotencyKey: req.idempotencyKey };
         if (req.idempotencyKey) s.analyses[req.idempotencyKey] = { status: 'in-progress', reservationId: r.id, modelKey: req.modelKey, since: at };
+        if (commitQuota) r.quota = commitQuota();
         s.sequence = (s.sequence ?? 0) + 1;
         m.reservedEur = round6(m.reservedEur + est);
         if (scope === 'trial') s.trial.reservedEur = round6(s.trial.reservedEur + est);
@@ -183,6 +194,60 @@ export class BudgetGuard {
     } catch (e) {
       if (e instanceof BudgetRefusedError) await this.logger.log({ at, event: 'refused', modelKey: req.modelKey, scope, estimatedMaxEur: est, code: e.code, detail: e.message });
       throw e;
+    }
+  }
+
+  /**
+   * Vérifie les quotas et renvoie une fonction qui les incrémente (appelée seulement si la réservation est acceptée).
+   * Production (`operational`) : jour et mois Europe/Paris, exécution. POC (`trial`) : compteurs cumulatifs de la phase.
+   */
+  private checkQuota(s: LedgerState, q: QuotaContext, modelKey: string): () => NonNullable<Reservation['quota']> {
+    const now = this.now();
+    const dailyKey = `${q.scope}|${parisDay(now)}`;
+    const monthlyKey = `${q.scope}|${parisMonth(now)}`;
+    const Q = s.quotas;
+    const run = Q.runs[q.runId] ?? 0;
+    if (q.scope === 'operational') {
+      const P = this.productionQuotas;
+      if ((Q.daily[dailyKey] ?? 0) >= P.dailyMax) throw new BudgetRefusedError('quota-daily', `Quota quotidien atteint (${P.dailyMax} appels, jour Europe/Paris ${dailyKey.split('|')[1]})`);
+      if ((Q.monthly[monthlyKey] ?? 0) >= P.monthlyMax) throw new BudgetRefusedError('quota-monthly', `Quota mensuel atteint (${P.monthlyMax} appels, ${monthlyKey.split('|')[1]})`);
+      if (run >= P.perRunMax) throw new BudgetRefusedError('quota-run', `Quota de l’exécution atteint (${P.perRunMax} appels)`);
+    } else {
+      const P = POC_PHASES[q.phase];
+      const ph = Q.phases[q.phase] ?? { total: 0, perModel: {} };
+      if (ph.total >= P.totalMax) throw new BudgetRefusedError('quota-phase-total', `Quota de la phase ${q.phase} atteint (${P.totalMax} appels au total)`);
+      if ((ph.perModel[modelKey] ?? 0) >= P.perModelMax) throw new BudgetRefusedError('quota-phase-model', `Quota de la phase ${q.phase} atteint pour ${modelKey} (${P.perModelMax})`);
+      if (run >= P.totalMax) throw new BudgetRefusedError('quota-run', `Quota de l’exécution atteint (${P.totalMax} appels)`);
+    }
+    return () => {
+      Q.daily[dailyKey] = (Q.daily[dailyKey] ?? 0) + 1;
+      Q.monthly[monthlyKey] = (Q.monthly[monthlyKey] ?? 0) + 1;
+      Q.runs[q.runId] = run + 1;
+      if (q.scope === 'trial') {
+        const ph = (Q.phases[q.phase] ??= { total: 0, perModel: {} });
+        ph.total += 1;
+        ph.perModel[modelKey] = (ph.perModel[modelKey] ?? 0) + 1;
+      }
+      return { context: q, dailyKey, monthlyKey };
+    };
+  }
+
+  /** Décompte une tentative de quota (requête certainement NON transmise au fournisseur). */
+  private refundQuota(s: LedgerState, r: Reservation) {
+    if (!r.quota) return;
+    const Q = s.quotas;
+    const dec = (o: Record<string, number>, k: string) => {
+      if (o[k]) o[k] -= 1;
+    };
+    dec(Q.daily, r.quota.dailyKey);
+    dec(Q.monthly, r.quota.monthlyKey);
+    dec(Q.runs, r.quota.context.runId);
+    if (r.quota.context.scope === 'trial') {
+      const ph = Q.phases[r.quota.context.phase];
+      if (ph) {
+        ph.total = Math.max(0, ph.total - 1);
+        dec(ph.perModel, r.modelKey);
+      }
     }
   }
 
@@ -283,11 +348,16 @@ export class BudgetGuard {
     return actual;
   }
 
-  /** Requête CERTAINEMENT non envoyée (erreur avant transmission) : seule libération sans frais possible. */
-  async release(id: string, reason: string): Promise<void> {
+  /**
+   * Requête certainement NON FACTURÉE : la réservation financière est libérée.
+   * `transmitted` : la requête a-t-elle atteint le fournisseur (ex. refus HTTP 4xx) ? Si oui, la tentative
+   * reste comptée dans les quotas ; sinon (refus avant envoi), elle est décomptée.
+   */
+  async release(id: string, reason: string, opts: { transmitted?: boolean } = {}): Promise<void> {
     const { at } = this.keys();
     const r = await this.store.transaction((s) => {
       const res = this.settle(s, id, 0);
+      if (!opts.transmitted) this.refundQuota(s, res);
       // Requête certainement non facturée : l'analyse peut être retentée (nouvelle réservation complète).
       if (res.idempotencyKey && s.analyses[res.idempotencyKey]?.status === 'in-progress') delete s.analyses[res.idempotencyKey];
       const dd = s.days[res.day];

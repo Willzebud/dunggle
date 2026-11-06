@@ -2,18 +2,20 @@
  * Exécuteur de la phase B.
  *   npm run evaluate:real                                  → simulation (défaut) du smoke test des deux modèles
  *   npm run evaluate:real -- --mode=full --dry-run         → simulation de l'évaluation complète
- *   npm run evaluate:real -- --model=<clé> --real --confirm-max-eur=<€>   → appels réels (bloqués tant que
- *                                                            REAL_CALLS_ENABLED = false)
+ *   npm run evaluate:real -- --mode=smoke --real --confirm-max-eur=<€>     → appels réels : exige une autorisation
+ *                                                            locale à usage unique (npm run poc2:authorize)
  * La simulation n'écrit RIEN dans le registre budgétaire ; elle affiche le plan, le coût maximal et les blocages.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { DEFAULT_LIMITS } from '../config/budget.js';
+import { POC_PHASES } from '../config/quotas.js';
 import { MODELS } from '../config/models.js';
 import { BudgetGuard } from '../budget/guard.js';
 import { MemoryBudgetStore, type LedgerState } from '../budget/store.js';
 import { createPersistentGuard, VAR_DIR, verifyLedgerIntegrity } from '../budget/factory.js';
-import { AnthropicAdapter, OpenAIAdapter, REAL_CALLS_ENABLED } from '../adapters/real.js';
+import { AnthropicAdapter, OpenAIAdapter } from '../adapters/real.js';
+import { consumeGrant, grantMismatch, peekGrant, type RealCallActivation } from '../security/activation.js';
 import { ArgsError, parseArgs } from '../runner/args.js';
 import { planRun } from '../runner/plan.js';
 import { executeRun, realRunBlockers } from '../runner/run.js';
@@ -43,23 +45,38 @@ const guard = args.real ? await createPersistentGuard() : new BudgetGuard(new Me
 if (!args.real) await verifyLedgerIntegrity(VAR_DIR).catch((e) => console.warn(`⚠️ ${e.message}`));
 
 const plan = planRun(args, items, guard, ledger);
-const adapterFor = (k: string) => (MODELS[k].provider === 'anthropic' ? new AnthropicAdapter(MODELS[k]) : new OpenAIAdapter(MODELS[k]));
-const deps = { guard, adapterFor, realCallsEnabled: REAL_CALLS_ENABLED, env: process.env };
+let activation: RealCallActivation | null = null;
+const adapterFor = (k: string) =>
+  MODELS[k].provider === 'anthropic' ? new AnthropicAdapter(MODELS[k], undefined, activation) : new OpenAIAdapter(MODELS[k], undefined, activation);
+const baseDeps = { guard, adapterFor, env: process.env };
 
 console.log(`Mode : ${args.mode} | ${args.real ? 'RÉEL demandé' : 'simulation (aucun appel)'} | modèles : ${args.models.join(', ')}`);
 console.log(`Appels prévus : ${plan.calls.length} (plafond ${plan.maxCalls}) | doublons retirés : ${plan.duplicatesRemoved} | écartés : ${plan.skipped.length}`);
 for (const c of plan.calls) console.log(`  - ${c.modelKey} × ${c.publication.id} : borne d’entrée ${c.inputTokensUpperBound} tokens, sortie ≤ ${DEFAULT_LIMITS.maxOutputTokensPerRequest}, coût maximal réservé ${c.maxCostEur.toFixed(6)} €`);
 for (const s of plan.skipped.slice(0, 10)) console.log(`  · écarté ${s.key} : ${s.reason}`);
+const phaseQ = POC_PHASES[plan.phase];
+const phaseUsed = ledger?.quotas?.phases?.[plan.phase];
+console.log(`Quotas de la phase ${plan.phase} (cumulatifs) : ${phaseUsed?.total ?? 0}/${phaseQ.totalMax} appels utilisés ; par modèle ≤ ${phaseQ.perModelMax} (${args.models.map((m) => `${m} ${phaseUsed?.perModel?.[m] ?? 0}`).join(', ')})`);
 console.log(`COÛT MAXIMAL DU PLAN : ${plan.totalMaxEur.toFixed(6)} € (budget d’essai : ${DEFAULT_LIMITS.trialTotalCapEur} €, déjà dépensé : ${(ledger?.trial.spentEur ?? 0).toFixed(6)} €)`);
 
-const blockers = await realRunBlockers(args, plan, deps);
+const blockers = await realRunBlockers(args, plan, baseDeps);
+const grantProblem = grantMismatch(await peekGrant(VAR_DIR), { phase: plan.phase, models: args.models, maxEur: args.confirmMaxEur ?? plan.totalMaxEur });
+if (grantProblem) blockers.push(`Autorisation locale : ${grantProblem}`);
 if (!args.real) {
   console.log(`\nPrérequis d’une exécution réelle non remplis (${blockers.length}) :`);
   for (const b of blockers) console.log(`  ✗ ${b}`);
   process.exit(0);
 }
 
-const report = await executeRun(args, plan, deps);
+if (blockers.length) {
+  console.error('\nExécution réelle REFUSÉE (aucune réservation, aucun appel, autorisation non consommée) :');
+  for (const b of blockers) console.error(`  ✗ ${b}`);
+  process.exit(3);
+}
+// Tous les prérequis sont remplis : l'autorisation est CONSOMMÉE (usage unique), l'activation n'existe qu'en mémoire.
+activation = await consumeGrant(VAR_DIR, { phase: plan.phase, models: args.models, maxEur: args.confirmMaxEur! });
+const report = await executeRun(args, plan, { ...baseDeps, activation });
+activation = null;
 if (!report.executed) {
   console.error('\nExécution réelle REFUSÉE (aucune réservation, aucun appel) :');
   for (const b of report.blockers) console.error(`  ✗ ${b}`);

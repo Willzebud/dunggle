@@ -15,6 +15,7 @@ Documentation transverse du projet. Les rapports générés restent à côté du
 - [Réutilisation du contenu : restrictions non résolues](content-reuse.md)
 - [Sécurité des appels IA (POC et futur backend NestJS)](ai-api-security.md)
 - [Audit de sécurité de la phase B.0](../pocs/ai-analysis/reports/phase-b-security-audit.md)
+- [Préparation de B.1 : quotas et activation (B.0.1)](../pocs/ai-analysis/reports/phase-b1-readiness.md)
 
 ## Décisions établies par les POC
 

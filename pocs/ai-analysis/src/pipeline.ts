@@ -4,6 +4,7 @@ import { resolveInput, type ResolvedInput } from './content-policy.js';
 import { coverageFor, type CoveragePolicy } from './config/coverage.js';
 import { buildPrompt, PROMPT_VERSION, SYSTEM_PROMPT } from './prompt.js';
 import { redactSecrets } from './security/redact.js';
+import type { QuotaContext } from './config/quotas.js';
 import { ANALYSIS_JSON_SCHEMA, validateAnalysis } from './schema.js';
 import type { AnalysisOutput, AnalysisRecord, AnalysisStatus, PublicationInput, Section } from './types.js';
 
@@ -13,6 +14,8 @@ export interface PipelineDeps {
   scope?: 'trial' | 'operational';
   /** Analyser aussi les publications exclues par une règle éditoriale (récupération). Défaut : non. */
   analyzeEditorialExcluded?: boolean;
+  /** Contexte de quota : OBLIGATOIRE pour un adaptateur réel (aucun appel payant hors quotas). */
+  quota?: QuotaContext;
 }
 
 /** Clé d'idempotence : une analyse = un modèle × une publication × une version du protocole. */
@@ -21,7 +24,7 @@ export function analysisKey(modelKey: string, publicationId: string): string {
 }
 
 /** Statuts pour lesquels la publication n'a pas pu être analysée (elle reste conservée). */
-const UNANALYZED: AnalysisStatus[] = ['refused-budget', 'refused-unknown-pricing', 'provider-error', 'invalid-output'];
+const UNANALYZED: AnalysisStatus[] = ['refused-budget', 'refused-quota', 'refused-unknown-pricing', 'provider-error', 'invalid-output'];
 
 /**
  * Analyse une publication en UN SEUL appel (classification + résumé éventuel).
@@ -59,6 +62,11 @@ export async function analyzePublication(pub: PublicationInput, deps: PipelineDe
     return { ...rec, status: 'skipped-editorial', section: 'excluded', model: null, error: `Règle éditoriale ${pub.editorial.ruleId} (récupérable)` };
   }
 
+  // Aucun appel payant hors quotas : un adaptateur réel exige un contexte de quota.
+  if (deps.adapter.real && !deps.quota) {
+    return unanalyzed({ ...rec, status: 'refused-quota', error: 'Contexte de quota absent : appel réel refusé' });
+  }
+
   const prompt = buildPrompt(pub, input);
   const maxOut = deps.guard.limits.maxOutputTokensPerRequest;
 
@@ -66,10 +74,12 @@ export async function analyzePublication(pub: PublicationInput, deps: PipelineDe
   const key = analysisKey(deps.adapter.model.key, pub.id);
   let reservationId: string;
   try {
-    reservationId = (await deps.guard.reserve({ modelKey: deps.adapter.model.key, inputTokensEstimate: prompt.inputTokensUpperBound, maxOutputTokens: maxOut, scope: deps.scope ?? 'trial', idempotencyKey: key })).id;
+    reservationId = (await deps.guard.reserve({ modelKey: deps.adapter.model.key, inputTokensEstimate: prompt.inputTokensUpperBound, maxOutputTokens: maxOut, scope: deps.scope ?? 'trial', idempotencyKey: key, quota: deps.quota })).id;
   } catch (e) {
     if (e instanceof BudgetRefusedError) {
       if (e.code === 'duplicate-analysis') return { ...rec, status: 'skipped-duplicate', error: e.message };
+      // Quota atteint : la publication reste en attente (aucune entrée créée), sans relance automatique.
+      if (e.code.startsWith('quota-')) return unanalyzed({ ...rec, status: 'refused-quota', error: `${e.code} : ${e.message}` });
       return unanalyzed({ ...rec, status: e.code === 'unknown-pricing' ? 'refused-unknown-pricing' : 'refused-budget', error: `${e.code} : ${e.message}` });
     }
     throw e;
@@ -100,7 +110,7 @@ export async function analyzePublication(pub: PublicationInput, deps: PipelineDe
     }
     if (e instanceof ProviderError) {
       if (!e.requestSent) {
-        await deps.guard.release(reservationId, `${e.kind} avant envoi`);
+        await deps.guard.release(reservationId, `${e.kind} : non facturée`, { transmitted: e.transmitted });
         rec.costEur = 0;
       } else if (e.usage) {
         rec.costEur = await deps.guard.reconcile(reservationId, e.usage);

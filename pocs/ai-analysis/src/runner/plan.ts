@@ -6,12 +6,13 @@ import { analysisKey } from '../pipeline.js';
 import { buildPrompt } from '../prompt.js';
 import type { PublicationInput } from '../types.js';
 import type { RunArgs } from './args.js';
+import { POC_PHASES, phaseForMode, type PocPhase } from '../config/quotas.js';
 
 /** Fixture synthétique FULL commune aux deux smoke tests (contenu rédigé pour le POC, aucun texte tiers). */
 export const SMOKE_FIXTURE_ID = 'synthetic:orion-multimodal';
 
-/** Plafonds d'appels par exécution, par modèle (non relevables par argument). */
-export const RUN_CALL_LIMITS = { smoke: 1, full: 40 } as const;
+/** Plafonds d'appels par modèle et par exécution, issus des quotas de phase du POC (non relevables par argument). */
+export const RUN_CALL_LIMITS = { smoke: POC_PHASES.B1.perModelMax, full: POC_PHASES.B2.perModelMax } as const;
 
 export interface PlannedCall {
   modelKey: string;
@@ -23,6 +24,7 @@ export interface PlannedCall {
 
 export interface RunPlan {
   mode: RunArgs['mode'];
+  phase: PocPhase;
   calls: PlannedCall[];
   skipped: { key: string; reason: string }[];
   maxCalls: number;
@@ -45,11 +47,17 @@ export function planRun(args: RunArgs, items: PublicationInput[], guard: BudgetG
     seen.add(p.id).add(p.url);
     return !!k;
   });
+  const phase = phaseForMode(args.mode);
+  const P = POC_PHASES[phase];
+  const used = ledger?.quotas?.phases?.[phase];
   const perModel = Math.min(args.maxCalls ?? RUN_CALL_LIMITS[args.mode], RUN_CALL_LIMITS[args.mode]);
+  let phaseRemaining = P.totalMax - (used?.total ?? 0);
   const calls: PlannedCall[] = [];
   const skipped: RunPlan['skipped'] = [];
   for (const modelKey of args.models) {
     let n = 0;
+    // Quota de phase cumulatif (jamais remis à zéro) : appels déjà tentés pour ce modèle.
+    const modelRemaining = P.perModelMax - (used?.perModel?.[modelKey] ?? 0);
     for (const p of unique) {
       const key = analysisKey(modelKey, p.id);
       const prev = ledger?.analyses?.[key];
@@ -57,15 +65,16 @@ export function planRun(args: RunArgs, items: PublicationInput[], guard: BudgetG
         skipped.push({ key, reason: `déjà ${prev.status} (non refacturé)` });
         continue;
       }
-      if (n >= perModel) {
-        skipped.push({ key, reason: `plafond d’appels de l’exécution atteint (${perModel} par modèle)` });
+      if (n >= perModel || n >= modelRemaining || phaseRemaining <= 0) {
+        skipped.push({ key, reason: n >= modelRemaining || phaseRemaining <= 0 ? `quota de la phase ${phase} épuisé (en attente, non analysée)` : `plafond d’appels de l’exécution atteint (${perModel} par modèle)` });
         continue;
       }
       const bound = buildPrompt(p, resolveInput(p)).inputTokensUpperBound;
       calls.push({ modelKey, publication: p, key, inputTokensUpperBound: bound, maxCostEur: guard.estimateMaxCostEur(modelKey, bound) });
       n++;
+      phaseRemaining--;
     }
   }
   const totalMaxEur = Math.round(calls.reduce((s, c) => s + c.maxCostEur, 0) * 1e6) / 1e6;
-  return { mode: args.mode, calls, skipped, maxCalls: perModel * args.models.length, totalMaxEur, duplicatesRemoved: source.length - unique.length };
+  return { mode: args.mode, phase, calls, skipped, maxCalls: Math.min(perModel * args.models.length, P.totalMax), totalMaxEur, duplicatesRemoved: source.length - unique.length };
 }

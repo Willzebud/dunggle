@@ -159,15 +159,18 @@ test('budget épuisé ou tarif inconnu : pas d’appel, publication en attente',
   assert.equal(adapter.calls.length + unpriced.calls.length, 0);
 });
 
-test('adaptateurs réels : refusent d’appeler, la réservation est libérée sans frais, aucun accès réseau', async () => {
+test('adaptateurs réels : sans contexte de quota → refus ; sans activation → aucune requête, réservation et quota rendus', async () => {
   const g = guard();
   for (const adapter of [new AnthropicAdapter(MODELS['anthropic-haiku-5-5']), new OpenAIAdapter(MODELS['openai-gpt-6-luna'])]) {
-    const r = await analyzePublication(byId('synthetic:angular-99'), { adapter, guard: g });
+    const noQuota = await analyzePublication(byId('synthetic:angular-99'), { adapter, guard: g });
+    assert.equal(noQuota.status, 'refused-quota');
+    const r = await analyzePublication(byId('synthetic:angular-99'), { adapter, guard: g, quota: { scope: 'trial', phase: 'B1', runId: 'test' } });
     assert.equal(r.status, 'provider-error');
     assert.match(r.error!, /Appels réels désactivés/);
     assert.equal(r.costEur, 0);
   }
   const s = await g.snapshot();
   assert.equal(s.trial.spentEur, 0);
+  assert.equal(s.quotas.phases.B1?.total ?? 0, 0, 'requêtes non transmises : quota décompté');
   assert.equal(networkCalls.length, 0);
 });

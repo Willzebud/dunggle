@@ -33,20 +33,25 @@ export type ProviderErrorKind = 'rate-limit' | 'server' | 'timeout' | 'network' 
  * - `usage` : usage connu malgré l'erreur (ex. refus ou troncature facturés).
  */
 export class ProviderError extends Error {
+  /** La requête a-t-elle atteint le fournisseur ? (compte alors dans les quotas, même non facturée). */
+  readonly transmitted: boolean;
   constructor(
     readonly kind: ProviderErrorKind,
     message: string,
+    /** false : CERTAINEMENT non facturée (refus avant envoi, ou refus HTTP 4xx du fournisseur). */
     readonly requestSent: boolean,
     readonly usage: ProviderUsage | null = null,
+    transmitted?: boolean,
   ) {
     super(message);
     this.name = 'ProviderError';
+    this.transmitted = transmitted ?? requestSent;
   }
 }
 
 export class RealCallsDisabledError extends Error {
   constructor(provider: string) {
-    super(`Appels réels désactivés en phase A (${provider}) : aucune requête n'est envoyée.`);
+    super(`Appels réels désactivés (${provider}) : aucune requête n'est envoyée.`);
     this.name = 'RealCallsDisabledError';
   }
 }

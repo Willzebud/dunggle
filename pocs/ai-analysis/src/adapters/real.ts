@@ -1,14 +1,14 @@
 import type { ModelConfig } from '../config/models.js';
 import { ProviderError, RealCallsDisabledError, type AIAdapter, type AnalysisRequest, type AnalysisResponse, type ProviderUsage } from './types.js';
 import { redactSecrets } from '../security/redact.js';
+import { activationAllows, type RealCallActivation } from '../security/activation.js';
 
 /**
- * Interrupteur principal des appels payants. Il n'est PAS pilotable par variable d'environnement ni par
- * argument : l'activer exige une modification de code revue et committée (autorisation explicite de B.1).
- * Même activé, un appel exige aussi : --real, --confirm-max-eur suffisant, clé présente, modèle validé,
- * registre budgétaire intègre, aucun coût incertain en attente (voir src/runner/).
+ * Il n'existe AUCUNE activation permanente des appels réels (ni constante, ni variable d'environnement).
+ * Un appel exige une activation en mémoire obtenue en consommant une autorisation locale à usage unique
+ * (src/security/activation.ts), en plus des autres verrous de l'exécuteur (src/runner/).
  */
-export const REAL_CALLS_ENABLED = false as const;
+export const PERMANENT_ACTIVATION = false as const;
 
 /** Présence d'une clé (sans jamais la lire ni l'afficher). */
 export function apiKeyConfigured(provider: 'anthropic' | 'openai', env: NodeJS.ProcessEnv = process.env): boolean {
@@ -79,16 +79,18 @@ export function classifySdkError(e: unknown): ProviderError {
   const status = typeof err?.status === 'number' ? err.status : undefined;
   if (status !== undefined && status >= 400 && status < 500) {
     const kind = status === 401 || status === 403 ? 'auth' : status === 429 ? 'rate-limit' : 'invalid-request';
-    return new ProviderError(kind, `HTTP ${status} : ${msg}`, false);
+    // Refusée par le fournisseur : non facturée, mais TRANSMISE (compte dans les quotas).
+    return new ProviderError(kind, `HTTP ${status} : ${msg}`, false, null, true);
   }
   if (status !== undefined && status >= 500) return new ProviderError('server', `HTTP ${status} : ${msg}`, true);
   if (/timeout/i.test(err?.name ?? '') || /timed? ?out/i.test(msg)) return new ProviderError('timeout', msg, true);
   return new ProviderError('network', msg, true);
 }
 
-function assertEnabled(enabled: boolean, provider: string, model: ModelConfig, env: NodeJS.ProcessEnv) {
-  if (!enabled) throw new RealCallsDisabledError(provider);
-  const blockers = realCallBlockers(model, enabled).filter((b) => !b.includes('REAL_CALLS_ENABLED'));
+function assertEnabled(activation: RealCallActivation | null, provider: string, model: ModelConfig, env: NodeJS.ProcessEnv) {
+  const denied = activationAllows(activation, model.key);
+  if (denied) throw new RealCallsDisabledError(`${provider} — ${denied}`);
+  const blockers = realCallBlockers(model, activation).filter((b) => !b.startsWith('Activation'));
   if (blockers.length) throw new ProviderError('invalid-request', `Appel refusé avant envoi : ${blockers.join(' ; ')}`, false);
   if (!apiKeyConfigured(model.provider === 'anthropic' ? 'anthropic' : 'openai', env)) {
     throw new ProviderError('auth', 'Clé API absente de l’environnement : appel refusé avant envoi', false);
@@ -100,7 +102,7 @@ export class AnthropicAdapter implements AIAdapter {
   constructor(
     readonly model: ModelConfig,
     private readonly clientFactory?: () => Promise<MessagesClient>,
-    private readonly enabled: boolean = REAL_CALLS_ENABLED,
+    private readonly activation: RealCallActivation | null = null,
     private readonly env: NodeJS.ProcessEnv = process.env,
   ) {}
 
@@ -113,7 +115,7 @@ export class AnthropicAdapter implements AIAdapter {
 
   async analyze(req: AnalysisRequest): Promise<AnalysisResponse> {
     const params = buildAnthropicParams(this.model, req);
-    assertEnabled(this.enabled, 'anthropic', this.model, this.env);
+    assertEnabled(this.activation, 'anthropic', this.model, this.env);
     const client = await this.client();
     let res: any;
     try {
@@ -133,7 +135,7 @@ export class OpenAIAdapter implements AIAdapter {
   constructor(
     readonly model: ModelConfig,
     private readonly clientFactory?: () => Promise<ResponsesClient>,
-    private readonly enabled: boolean = REAL_CALLS_ENABLED,
+    private readonly activation: RealCallActivation | null = null,
     private readonly env: NodeJS.ProcessEnv = process.env,
   ) {}
 
@@ -145,7 +147,7 @@ export class OpenAIAdapter implements AIAdapter {
 
   async analyze(req: AnalysisRequest): Promise<AnalysisResponse> {
     const params = buildOpenAIParams(this.model, req);
-    assertEnabled(this.enabled, 'openai', this.model, this.env);
+    assertEnabled(this.activation, 'openai', this.model, this.env);
     const client = await this.client();
     let res: any;
     try {
@@ -162,9 +164,10 @@ export class OpenAIAdapter implements AIAdapter {
 }
 
 /** Raisons empêchant tout appel réel pour un modèle (en plus de REAL_CALLS_ENABLED). */
-export function realCallBlockers(model: ModelConfig, enabled: boolean = REAL_CALLS_ENABLED): string[] {
+export function realCallBlockers(model: ModelConfig, activation: RealCallActivation | null = null): string[] {
   const b: string[] = [];
-  if (!enabled) b.push('Appels réels désactivés en phase A (REAL_CALLS_ENABLED = false)');
+  const denied = activationAllows(activation, model.key);
+  if (denied) b.push(`Activation : ${denied}`);
   if (model.provider === 'mock') b.push('Modèle simulé');
   if (model.validation.status !== 'validated') b.push(`Configuration non validée : ${model.validation.blockers.join(' ; ')}`);
   if (!model.pricing) b.push('Tarif non vérifié');

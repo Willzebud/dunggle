@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { forbidNetwork, evaluationSet, groundTruth, networkCalls } from './helpers.js';
 import { THEMES, PUBLICATION_TYPES, EXCLUSION_REASONS } from '../src/taxonomy.js';
 import { resolveInput } from '../src/content-policy.js';
-import { REAL_CALLS_ENABLED, buildAnthropicParams, buildOpenAIParams, apiKeyConfigured } from '../src/adapters/real.js';
+import { PERMANENT_ACTIVATION, buildAnthropicParams, buildOpenAIParams, apiKeyConfigured } from '../src/adapters/real.js';
 import { MODELS, CANDIDATE_MODEL_KEYS } from '../src/config/models.js';
 import { ANALYSIS_JSON_SCHEMA } from '../src/schema.js';
 import { prefilterHint, PREFILTER_ENABLED } from '../src/prefilter.js';
@@ -67,7 +67,7 @@ test('préfiltre : mode observation, n’exclut rien (désactivé)', () => {
 });
 
 test('aucun appel réel : interrupteur figé, requêtes construites conformes aux formats vérifiés', () => {
-  assert.equal(REAL_CALLS_ENABLED, false);
+  assert.equal(PERMANENT_ACTIVATION, false);
   const req = { system: 's', user: 'u', schema: ANALYSIS_JSON_SCHEMA, maxOutputTokens: 800 };
   const a = buildAnthropicParams(MODELS['anthropic-haiku-5-5'], req);
   assert.equal(a.model, 'claude-haiku-5-5');
