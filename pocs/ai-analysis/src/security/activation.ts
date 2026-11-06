@@ -16,8 +16,8 @@ import { CANDIDATE_MODEL_KEYS } from '../config/models.js';
 export const GRANT_TTL_MS = 15 * 60_000;
 /**
  * Durée maximale d'une exécution avec une activation donnée, PAR PHASE (jamais permanente, toujours en mémoire).
- * B.1 : 2 appels → 30 minutes. B.2 : jusqu'à 72 appels avec ≥ 61 s entre deux requêtes OpenAI → environ
- * 37 minutes en régime typique, 72 minutes si chaque appel atteignait le délai maximal du SDK (60 s) : 90 minutes.
+ * B.1 : 2 appels → 30 minutes. B.2 : jusqu'à 74 appels avec ≥ 61 s entre deux requêtes OpenAI → environ
+ * 37 minutes en régime typique, 74 minutes si chaque appel atteignait le délai maximal du SDK (60 s) : 90 minutes.
  * Une activation expirée en cours d'exécution fait refuser les appels suivants AVANT envoi (sûr, mais incomplet).
  */
 export const ACTIVATION_TTL_MS_BY_PHASE: Readonly<Record<PocPhase, number>> = Object.freeze({ B1: 30 * 60_000, B2: 90 * 60_000 });

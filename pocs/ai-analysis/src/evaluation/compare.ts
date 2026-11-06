@@ -309,3 +309,23 @@ export function comparisonMarkdown(metrics: ModelMetrics[]): string {
   const miss = metrics.map((m) => `**${m.model}** : ${m.mandatoryCoverage.missing.join(', ') || 'aucune'}`).join('\n\n');
   return `${head}\n${body}\n\n### Contrôles de résumé (indicatifs)\n\n${crit}\n\n### Écarts de type (principal attendu → produit)\n\n${conf}\n\n### Couverture obligatoire manquante\n\n${miss}\n\n### Erreurs\n\n${errs}\n`;
 }
+
+export interface RunFile {
+  file: string;
+  args?: { mode?: string };
+  phase?: string;
+  promptVersion?: string;
+  report: { records: AnalysisRecord[]; timings?: Timing[] };
+}
+
+/** Exécutions comparables : B.2 (mode full) avec la version courante du prompt. B.1 et anciens prompts : écartés. */
+export function selectComparableRuns(runs: RunFile[], promptVersion: string): { kept: RunFile[]; ignored: { file: string; reason: string }[] } {
+  const kept: RunFile[] = [];
+  const ignored: { file: string; reason: string }[] = [];
+  for (const r of runs) {
+    if (r.args?.mode !== 'full') ignored.push({ file: r.file, reason: `mode ${r.args?.mode ?? 'inconnu'} (historique B.1, non réutilisé)` });
+    else if (r.promptVersion !== promptVersion) ignored.push({ file: r.file, reason: `prompt ${r.promptVersion ?? 'inconnu'} ≠ ${promptVersion}` });
+    else kept.push(r);
+  }
+  return { kept, ignored };
+}

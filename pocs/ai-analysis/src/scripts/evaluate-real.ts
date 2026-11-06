@@ -22,6 +22,7 @@ import { CALL_LATENCY_ASSUMPTIONS_MS, estimateRunDurationMs, executeRun, realRun
 import { smokeChecks, type SmokeGroundTruth } from '../runner/smoke-checks.js';
 import { redactSecrets } from '../security/redact.js';
 import type { PublicationInput } from '../types.js';
+import { PROMPT_VERSION } from '../prompt.js';
 import { EnvFileError, loadLocalEnv } from '../security/env-file.js';
 import { apiKeyConfigured, apiKeyFormatProblem } from '../adapters/real.js';
 
@@ -116,7 +117,7 @@ if (!report.executed) {
 }
 await mkdir(`${VAR_DIR}runs/`, { recursive: true });
 const runFile = `${VAR_DIR}runs/${new Date().toISOString().replace(/[:.]/g, '-')}-${args.mode}.json`;
-await writeFile(runFile, redactSecrets(JSON.stringify({ args, quotaExceptions: phaseExceptions, plan: { ...plan, calls: plan.calls.map((c) => ({ modelKey: c.modelKey, publicationId: c.publication.id, maxCostEur: c.maxCostEur })) }, report }, null, 2)));
+await writeFile(runFile, redactSecrets(JSON.stringify({ args, phase: plan.phase, promptVersion: PROMPT_VERSION, quotaExceptions: phaseExceptions, plan: { ...plan, calls: plan.calls.map((c) => ({ modelKey: c.modelKey, publicationId: c.publication.id, maxCostEur: c.maxCostEur })) }, report }, null, 2)));
 if (args.mode === 'smoke') {
   const gt = (JSON.parse(await readFile(new URL('../../fixtures/ground-truth.json', import.meta.url), 'utf8')) as { items: (SmokeGroundTruth & { id: string })[] }).items;
   for (const rec of report.records) {

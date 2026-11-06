@@ -9,7 +9,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { forbidNetwork, evaluationSet, groundTruth } from './helpers.js';
 import { autoCheckSummary, containsClaim } from '../src/evaluation/summary-checks.js';
-import { blindReviewGrid, computeModelMetrics, latestRecords, type GroundTruthItem } from '../src/evaluation/compare.js';
+import { blindReviewGrid, computeModelMetrics, latestRecords, selectComparableRuns, type GroundTruthItem } from '../src/evaluation/compare.js';
+import { PROMPT_VERSION } from '../src/prompt.js';
 import { MockAdapter, mockOutput } from '../src/adapters/mock.js';
 import { BudgetGuard } from '../src/budget/guard.js';
 import { FileBudgetStore, MemoryBudgetStore } from '../src/budget/store.js';
@@ -54,32 +55,38 @@ test('Affirmation interdite : les résumés réels de B.1 ne sont plus signalés
 });
 
 // ================================================================ 3. Plan B.2
-/** Registre reproduisant l'état réel après B.1 : orion analysé par les deux modèles, quotas B.1 consommés. */
+/**
+ * Registre reproduisant l'état réel après B.1 : orion analysée par les deux modèles avec l'ANCIEN prompt
+ * (clé d'idempotence différente de la version courante), quotas B.1 consommés.
+ */
 async function guardAfterB1(store = new MemoryBudgetStore()) {
   const g = new BudgetGuard(store);
-  const orion = evaluationSet.items.find((p) => p.id === SMOKE_FIXTURE_ID)!;
   for (const m of MODELS2) {
-    const adapter = new MockAdapter(() => ({ rawText: mockOutput({ exclusionReason: 'none' }), usage: { inputTokens: 1500, outputTokens: 450 }, stopReason: 'end_turn' }), MODELS[m]);
-    await analyzePublication(orion, { adapter, guard: g, quota: { scope: 'trial', phase: 'B1', runId: `b1-${m}` } });
+    const r = await g.reserve({ modelKey: m, inputTokensEstimate: 7460, idempotencyKey: `${m}|${SMOKE_FIXTURE_ID}|1c46e6992832`, quota: { scope: 'trial', phase: 'B1', runId: `b1-${m}` } });
+    await g.reconcile(r.id, { inputTokens: 1500, outputTokens: 450 });
   }
   return g;
 }
 
-test('B.2 : 37 publications éligibles, deux modèles validés, fixture B.1 non refacturée → 72 appels alternés', async () => {
+test('B.2 : 37 publications éligibles × 2 modèles = 74 appels alternés, orion réanalysée avec le prompt courant', async () => {
   assert.equal(evaluationSet.items.filter(isEligible).length, 37);
   for (const m of MODELS2) assert.equal(MODELS[m].validation.status, 'validated');
   const g = await guardAfterB1();
   const plan = planRun(parseArgs(['--mode=full']), evaluationSet.items, g, await g.snapshot());
   assert.equal(plan.phase, 'B2');
-  assert.equal(plan.calls.length, 72);
-  assert.ok(!plan.calls.some((c) => c.publication.id === SMOKE_FIXTURE_ID), 'orion non replanifiée');
-  assert.equal(plan.skipped.filter((s) => s.key.includes('orion')).length, 2);
+  assert.equal(plan.calls.length, 74);
+  assert.equal(plan.calls.filter((c) => c.publication.id === SMOKE_FIXTURE_ID).length, 2, 'orion replanifiée (nouveau prompt)');
+  assert.equal(plan.skipped.length, 0);
+  for (const m of MODELS2) assert.equal(plan.calls.filter((c) => c.modelKey === m).length, 37);
+  assert.equal(new Set(plan.calls.map((c) => c.key)).size, 74, 'aucun doublon');
+  const s0 = await g.snapshot();
+  assert.ok(Object.keys(s0.analyses).some((k) => k.endsWith('|1c46e6992832')), 'résultats B.1 conservés dans le registre');
   for (let i = 0; i < plan.calls.length; i++) assert.equal(plan.calls[i].modelKey, MODELS2[i % 2], 'ordre alterné');
   for (const m of MODELS2) assert.ok(plan.calls.filter((c) => c.modelKey === m).length <= POC_PHASES.B2.perModelMax);
   assert.ok(plan.calls.every((c) => c.inputTokensUpperBound <= DEFAULT_LIMITS.maxInputTokensPerRequest));
   const s = await g.snapshot();
   assert.ok(plan.totalMaxEur + s.trial.spentEur < DEFAULT_LIMITS.trialTotalCapEur, 'budget cumulé respecté');
-  assert.ok(plan.totalMaxEur < 0.11);
+  assert.ok(plan.totalMaxEur < 0.12);
 });
 
 test('B.2 : durée estimée compatible avec l’activation B.2 (90 min), B.1 inchangé, plafond absolu', async () => {
@@ -105,8 +112,8 @@ test('B.2 : durée estimée compatible avec l’activation B.2 (90 min), B.1 inc
 let ACT_B2: RealCallActivation;
 before(async () => {
   const dir = `${await mkdtemp(join(tmpdir(), 'dunggle-act-'))}/`;
-  await createGrant({ phase: 'B2', models: MODELS2, maxEur: 0.11, confirm: confirmationPhrase('B2', 0.11) }, dir);
-  ACT_B2 = await consumeGrant(dir, { phase: 'B2', models: MODELS2, maxEur: 0.11 });
+  await createGrant({ phase: 'B2', models: MODELS2, maxEur: 0.12, confirm: confirmationPhrase('B2', 0.12) }, dir);
+  ACT_B2 = await consumeGrant(dir, { phase: 'B2', models: MODELS2, maxEur: 0.12 });
 });
 const env = { ANTHROPIC_API_KEY: ['sk', 'ant', 'api03', 'TESTB2xxxxxxxxxxxxxxxxxxxxx'].join('-'), OPENAI_API_KEY: ['sk', 'proj', 'TESTB2xxxxxxxxxxxxxxxxxxxxxxx'].join('-') } as NodeJS.ProcessEnv;
 function deps(guard: BudgetGuard, opts: { stopAfter?: number; activation?: RealCallActivation | null; now?: () => number } = {}): RunDeps & { calls: string[] } {
@@ -127,7 +134,7 @@ test('B.2 : interruption (Ctrl+C) puis reprise : aucune réservation ouverte, au
   const dir = await mkdtemp(join(tmpdir(), 'dunggle-resume-'));
   try {
     const g = await guardAfterB1(new FileBudgetStore(join(dir, 'ledger.json')) as unknown as MemoryBudgetStore);
-    const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.11']);
+    const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.12']);
     const d1 = deps(g, { stopAfter: 10 });
     const r1 = await executeRun(args, planRun(args, evaluationSet.items, g, await g.snapshot()), d1);
     assert.equal(r1.records.length, 10);
@@ -137,14 +144,19 @@ test('B.2 : interruption (Ctrl+C) puis reprise : aucune réservation ouverte, au
     assert.equal(Object.keys(s.reservations).length, 0, 'aucune réservation laissée ouverte');
     // Reprise (nouvelle autorisation dans la réalité ; ici même activation de test) : uniquement le reste.
     const plan2 = planRun(args, evaluationSet.items, g, s);
-    assert.equal(plan2.calls.length, 62);
+    assert.equal(plan2.calls.length, 64);
     const d2 = deps(g);
     const r2 = await executeRun(args, plan2, d2);
-    assert.equal(r2.records.length, 62);
+    assert.equal(r2.records.length, 64);
     s = await g.snapshot();
-    assert.equal(s.quotas.phases.B2.total, 72);
+    assert.equal(s.quotas.phases.B2.total, 74);
     const keys = [...r1.records, ...r2.records].map((r) => `${r.model}|${r.publicationId}`);
-    assert.equal(new Set(keys).size, 72, 'aucune publication analysée deux fois');
+    assert.equal(new Set(keys).size, 74, 'aucune publication analysée deux fois');
+    // Quota B.2 : exactement 37 par modèle ; une 38e tentative est refusée par le garde.
+    for (const m of MODELS2) {
+      assert.equal(s.quotas.phases.B2.perModel[m], 37);
+      await assert.rejects(g.reserve({ modelKey: m, inputTokensEstimate: 100, idempotencyKey: `x|${m}`, quota: { scope: 'trial', phase: 'B2', runId: 'extra' } }), /Quota de la phase B2/);
+    }
     assert.equal(planRun(args, evaluationSet.items, g, s).calls.length, 0, 'plus rien à faire');
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -153,7 +165,7 @@ test('B.2 : interruption (Ctrl+C) puis reprise : aucune réservation ouverte, au
 
 test('B.2 : activation insuffisante pour la durée estimée → exécution refusée avant tout appel', async () => {
   const g = await guardAfterB1();
-  const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.11']);
+  const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.12']);
   // Horloge simulée : il ne reste que 20 minutes de validité.
   const d = deps(g, { now: () => ACT_B2.validUntil - 20 * 60_000 });
   const r = await executeRun(args, planRun(args, evaluationSet.items, g, await g.snapshot()), d);
@@ -223,4 +235,20 @@ test('Indicateurs : dernier enregistrement retenu (incident B.1 puis reprise) et
   assert.deepEqual(item.candidates.map((c) => c.label), ['A', 'B']);
   assert.ok(!JSON.stringify(grid).includes(HAIKU) && !JSON.stringify(grid).includes(LUNA), 'aucun nom de modèle dans la grille');
   for (const c of item.candidates) assert.equal(byModel.get(key[orion][c.label])![0].analysis!.summary, c.summary, 'correspondance exacte');
+});
+
+test('Comparaison : seules les exécutions B.2 du prompt courant sont retenues (B.1 conservé, non réutilisé)', () => {
+  const r = (file: string, mode: string, promptVersion?: string) => ({ file, args: { mode }, promptVersion, report: { records: [] } });
+  const { kept, ignored } = selectComparableRuns([r('b1-incident.json', 'smoke'), r('b1-reprise.json', 'smoke', '1c46e6992832'), r('b2-ancien.json', 'full', 'ancien'), r('b2.json', 'full', PROMPT_VERSION)], PROMPT_VERSION);
+  assert.deepEqual(kept.map((k) => k.file), ['b2.json']);
+  assert.equal(ignored.length, 3);
+  assert.notEqual(PROMPT_VERSION, '1c46e6992832', 'le prompt B.2 diffère de celui de B.1');
+});
+
+test('Prompt : définitions des huit types présentes et conformes à la règle validée', async () => {
+  const { SYSTEM_PROMPT } = await import('../src/prompt.js');
+  for (const t of ['security_advisory', 'release', 'feature', 'product', 'breakthrough', 'research', 'technical_analysis', 'prospective_analysis']) assert.match(SYSTEM_PROMPT, new RegExp(`· ${t} :`));
+  assert.match(SYSTEM_PROMPT, /ÉVÉNEMENT DOMINANT/);
+  assert.match(SYSTEM_PROMPT, /nouvelle version d'un modèle d'IA existant/);
+  assert.match(SYSTEM_PROMPT, /disponibilité n'est pas établie/);
 });

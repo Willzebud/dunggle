@@ -1,6 +1,6 @@
 # POC 2 — Préparation de B.2
 
-> État au 2026-11-06, après B.1 (deux smoke tests réussis, 0,000854 € dépensés). **Aucun appel B.2 effectué.** Complète `phase-b1-readiness.md`.
+> État au 2026-11-06, après B.1 (deux smoke tests réussis, 0,000854 € dépensés) et la validation de la règle des types (option 1). **Aucun appel B.2 effectué.** Complète `phase-b1-readiness.md`.
 
 ## 1. Corrections depuis B.1
 
@@ -17,13 +17,13 @@
 |---|---|
 | Publications éligibles | 37 sur 39 (exclues : source bloquée synthétique, digest « The Download ») |
 | Modèles | `anthropic-haiku-5-5`, `openai-gpt-6-luna` (validés) |
-| Déjà analysée en B.1 | `synthetic:orion-multimodal`, écartée pour les deux modèles (« déjà completed, non refacturé ») |
-| **Appels prévus** | **72** (36 par modèle), quota B.2 : 74 (37 par modèle) |
-| **Coût maximal réservé** | **0,103718 €** |
-| Bornes | entrée ≤ 16 000 tokens par requête (plan : 6 507 à 7 648), sortie ≤ 800 tokens |
-| **Durée estimée** | **≈ 36 min** en régime typique ; 72 min si chaque appel atteignait le délai maximal de 60 s |
+| OrionVision | Réanalysée (option 1) : nouveau prompt avec les définitions des types. Les résultats B.1 restent dans le registre et dans `var/runs/` pour l’historique, mais `poc2:compare` ne retient que les exécutions B.2 du prompt courant |
+| **Appels prévus** | **74** (37 par modèle), égal au quota B.2 (37 par modèle, 74 au total) |
+| **Coût maximal réservé** | **0,118793 €** |
+| Bornes | entrée ≤ 16 000 tokens par requête (plan : 7 658 à 8 799), sortie ≤ 800 tokens |
+| **Durée estimée** | **≈ 37 min** en régime typique ; 74 min si chaque appel atteignait le délai maximal de 60 s |
 | Activation B.2 | 90 min |
-| Budget | 0,50 € au total, 0,000854 € dépensés ; après B.2, au moins **0,395428 €** restants |
+| Budget | 0,50 € au total, 0,000854 € dépensés ; après B.2, au moins **0,380353 €** restants |
 
 Protections inchangées :
 - quotas cumulatifs ;
@@ -64,12 +64,12 @@ Seules les fixtures synthétiques FULL ont un texte à résumer : les sources r�
 
 ## 5. Décisions en attente
 
-Voir `editorial-types-proposal.md` : règle de typage, réordonnancement d’OrionVision, ambiguïtés A à F, et prompt avec ou sans définitions des types.
+Règle des types validée et appliquée (`editorial-types-proposal.md` § 6). Restent trois ambiguïtés mineures, qui n’affectent que l’indicateur « type principal ».
 
 ## 6. Risques résiduels
 
 - Avec un seul passage par modèle, les écarts faibles ne sont pas significatifs, surtout sur 9 fixtures synthétiques.
 - Les sources réelles sont en métadonnées seules : la qualité des résumés n’est mesurée que sur les fixtures synthétiques.
-- Un 429 ou un 4xx arrête l’exécution. Le quota B.2 restant après une reprise est de 2 appels au-delà du plan.
+- Un 429 ou un 4xx arrête l’exécution, et la tentative est comptée. Le plan utilise exactement le quota B.2 : une publication en échec ne peut pas être réanalysée en B.2 sans nouvelle décision.
 - Une sortie tronquée à 800 tokens serait facturée et invalide. En B.1, les sorties ont été de 523 et 412 tokens, sur des textes plus longs que les métadonnées.
 - Les plafonds des fournisseurs (1 $ par mois) restent la protection contre une clé volée. Celui d’OpenAI peut être légèrement dépassé.

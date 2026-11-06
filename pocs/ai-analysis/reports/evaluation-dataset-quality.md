@@ -1,6 +1,6 @@
 # POC 2 — Qualité du jeu d’évaluation (phase A.1)
 
-> Généré par `npm run prepare:eval` le 2026-11-06. Vérité terrain révisée : 2026-11-06 (phase A.1).
+> Généré par `npm run prepare:eval` le 2026-11-06. Vérité terrain révisée : 2026-11-06 (préparation B.2 : règle des types validée).
 
 ## Composition
 
@@ -40,6 +40,11 @@
 - synthetic:regional-agents-rules : summaryExpected true → "if-kept"
 - mit-tech-review:…?p=1144908 (« The Download ») : acceptableExclusions [null] → ["duplicate"] (digest reprenant des articles déjà publiés ; cohérence avec must_exclude)
 - synthetic:regional-agents-rules : editorialDecision ambiguous → must_keep (réglementation à impact concret sur les agents : dans le périmètre E ; reste hardToClassify), summaryExpected if-kept → true
+- Préparation B.2 — règle des types validée par l’utilisateur (événement dominant ; voir reports/editorial-types-proposal.md). Modifications justifiées par le contenu, indépendamment des sorties des modèles :
+- synthetic:orion-multimodal : types ['research', 'product'] → ['product', 'release', 'research'] (événement dominant : modèle rendu accessible (poids ouverts) → product ; le texte cite « la version précédente du même laboratoire » → release acceptable ; rapport technique → research acceptable)
+- deepmind-blog:https://deepmind.google/blog/gemini-4-carbon-o : types ['product', 'research'] → ['product', 'release', 'research'] (nouveau modèle accessible → product ; « Gemini 4 » : nouvelle version d'une famille existante → release acceptable)
+- huggingface-blog:https://huggingface.co/blog/nvidia/cosmos-i : types ['product', 'research'] → ['product', 'release', 'research'] (« Cosmos 3 Open Models » : modèles ouverts → product ; nouvelle version d'une famille existante → release acceptable)
+- ieee-robotics:https://spectrum.ieee.org/video-friday-whole-b : types ['product', 'research'] → ['research', 'product'] (démonstration de manipulation corps entier dont la disponibilité n'est pas établie → research en principal (règle Video Friday))
 
 ## Sources à couverture obligatoire
 

@@ -678,6 +678,7 @@
         ],
         "types": [
           "product",
+          "release",
           "research"
         ],
         "relevance": "high",
@@ -784,6 +785,7 @@
         ],
         "types": [
           "product",
+          "release",
           "research"
         ],
         "relevance": "high",
@@ -1468,8 +1470,8 @@
           "DIGITAL_INNOVATION"
         ],
         "types": [
-          "product",
-          "research"
+          "research",
+          "product"
         ],
         "relevance": "low",
         "novelty": [
@@ -1641,8 +1643,9 @@
           "AI"
         ],
         "types": [
-          "research",
-          "product"
+          "product",
+          "release",
+          "research"
         ],
         "relevance": "high",
         "novelty": [

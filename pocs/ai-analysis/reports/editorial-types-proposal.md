@@ -1,6 +1,6 @@
-# Types de publication — proposition de règle éditoriale (à valider)
+# Types de publication — règle éditoriale
 
-> Rédigé le 2026-11-06 après B.1. **Proposition : rien n’est encore appliqué.** La vérité de référence (`fixtures/ground-truth.json`) et le prompt sont inchangés.
+> Rédigé le 2026-11-06 après B.1, puis **validé avec des précisions** (voir § 6, qui prévaut sur les §§ 2 à 5). Appliqué au prompt et à la vérité de référence.
 
 ## 1. Constat
 
@@ -58,3 +58,34 @@ Ajouter ces définitions au prompt rendra l’indicateur de type significatif. M
 3. **Prompt inchangé** : B.2 mesure les modèles sans définitions, et l’écart sur les types reste attendu.
 
 Sans décision, l’état actuel correspond à l’option 3 : prompt inchangé et OrionVision non replanifiée.
+
+## 6. Décisions validées (2026-11-06) — appliquées
+
+1. Le type principal décrit l’**événement dominant** de la publication.
+2. Un nouveau modèle d’IA rendu accessible (API ou poids ouverts) relève généralement de `product`.
+3. Une nouvelle version d’un modèle existant **peut** relever de `release`. Ce type n’est plus interdit aux modèles, contrairement au § 2.
+4. Une publication essentiellement scientifique relève de `research`, même si elle présente un modèle.
+5. Genie 4 : `research` conservé, faute de disponibilité établie.
+6. Spécifications MCP : `feature` pour une nouvelle fonctionnalité, `release` pour une version logicielle réellement livrée.
+7. Billets TypeScript et Angular : `feature` pour une annonce fonctionnelle, `technical_analysis` pour une explication technique.
+8. Video Friday : `product` si la disponibilité du produit est établie, sinon `research` selon le contenu.
+9. Le type des publications exclues n’entre pas dans le score principal.
+10. Option 1 : les définitions sont ajoutées au prompt, et OrionVision est réanalysée en B.2 avec le même prompt que les 36 autres publications.
+
+**Prompt :** chaque type est défini dans `SYSTEM_PROMPT`, sur le critère de l’événement dominant.
+
+**Vérité de référence :** 4 modifications, justifiées par le contenu et indépendantes des sorties des modèles (tracées dans `changeLog`) :
+
+| Fixture | Avant | Après | Justification |
+|---|---|---|---|
+| OrionVision (synthétique) | research, product | **product**, release, research | Modèle rendu accessible (poids ouverts). Le texte cite « la version précédente du même laboratoire », donc `release` est acceptable ; le rapport technique rend `research` acceptable |
+| Gemini 4 Carbon | product, research | **product**, release, research | Nouveau modèle ; « 4 » désigne une nouvelle version d’une famille existante |
+| Cosmos 3 Open Models | product, research | **product**, release, research | Modèles ouverts ; nouvelle version d’une famille existante |
+| Video Friday (Spot) | product, research | **research**, product | Démonstration dont la disponibilité n’est pas établie |
+
+Toutes les autres fixtures sont inchangées, y compris Genie 4, MCP 2099-01, les billets Angular et GPT-6 Cyber. Le jeu reste cohérent : 0 incohérence au contrôle `poc2:prepare`.
+
+**Ambiguïtés restantes** (n’affectent que l’indicateur « type principal », les deux types restant acceptables) :
+- « An update on Angular’s TypeScript 7-powered Compiler » : titre seul. `feature` est conservé en principal, mais un point d’avancement peut relever de `technical_analysis`.
+- « Signal Value Transforms, Routing Essentials, and Video Extension » : un récapitulatif mêle plusieurs annonces. `feature` est conservé.
+- GPT-6 Cyber : variante spécialisée d’une famille existante. `product` est conservé ; `release` n’est pas ajouté faute d’indication de nouvelle version dans les métadonnées.
