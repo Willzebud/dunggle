@@ -88,13 +88,13 @@ test('.env réel du POC : ignoré par Git (vérifié sans lire le fichier)', () 
 });
 
 // ================================================================ Plan B.1
-test('B.1 : exactement une requête par fournisseur, sur la fixture synthétique, coût maximal 0,003050 €', () => {
+test('B.1 : exactement une requête par fournisseur, sur la fixture synthétique, coût maximal 0,003099 € (schéma corrigé)', () => {
   const plan = planRun(parseArgs(['--mode=smoke']), evaluationSet.items, new BudgetGuard(new MemoryBudgetStore()), null);
   assert.equal(plan.phase, 'B1');
   assert.equal(plan.calls.length, 2);
   assert.deepEqual(plan.calls.map((c) => MODELS[c.modelKey].provider).sort(), ['anthropic', 'openai']);
   assert.ok(plan.calls.every((c) => c.publication.id === SMOKE_FIXTURE_ID));
-  assert.equal(plan.totalMaxEur, 0.00305);
+  assert.equal(plan.totalMaxEur, 0.003099);
   assert.ok(plan.totalMaxEur <= DEFAULT_LIMITS.trialTotalCapEur);
 });
 

@@ -75,7 +75,7 @@ test('vérité terrain : lumio-funding exclue → résumé autorisé mais non at
 
 // ------------------------------------------------------------------ résumés des publications exclues
 test('exclusion : la consigne interdit le résumé et le pipeline supprime tout résumé d’une publication exclue', async () => {
-  assert.match(SYSTEM_PROMPT, /Si exclusionReason n'est pas null, summary = null/);
+  assert.match(SYSTEM_PROMPT, /Si exclusionReason n'est pas "none", summary = ""/);
   const adapter = new MockAdapter(() => ({
     rawText: mockOutput({ themes: [], exclusionReason: 'funding_only', summary: 'Lumio lève 40 millions d’euros.', keyPoints: ['40 millions'] }),
     usage: { inputTokens: 900, outputTokens: 120 },

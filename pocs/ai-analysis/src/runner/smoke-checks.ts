@@ -26,7 +26,12 @@ const BANDS = { high: [70, 100], medium: [40, 69], low: [0, 39] } as const;
 export function smokeChecks(rec: AnalysisRecord, pub: PublicationInput, gt: SmokeGroundTruth, reservedMaxEur: number): SmokeCheck[] {
   const c: SmokeCheck[] = [];
   const raw = (rec.usage?.raw ?? {}) as Record<string, any>;
-  c.push({ check: 'Authentification et appel', ok: rec.status !== 'provider-error' || !/auth|401|403/.test(rec.error ?? ''), detail: rec.error ?? 'aucune erreur' });
+  // Deux contrôles distincts : une requête refusée (ex. HTTP 400) ne doit jamais apparaître comme réussie.
+  const authFailed = rec.status === 'provider-error' && /auth|HTTP 401|HTTP 403/.test(rec.error ?? '');
+  const reachedProvider = rec.status !== 'provider-error' || /HTTP \d{3}/.test(rec.error ?? '');
+  c.push({ check: 'Authentification', ok: authFailed ? false : reachedProvider ? true : null, detail: authFailed ? 'clé refusée' : reachedProvider ? 'clé acceptée par le fournisseur' : 'non déterminée (aucune réponse du fournisseur)' });
+  const callOk = rec.status === 'analyzed' || rec.status === 'invalid-output';
+  c.push({ check: 'Appel abouti (réponse reçue)', ok: callOk, detail: callOk ? 'réponse reçue' : `${rec.status}${rec.error ? ` : ${rec.error}` : ''}` });
   c.push({ check: 'Schéma JSON valide', ok: rec.status === 'analyzed', detail: rec.status });
   const a = rec.analysis;
   if (a) {
@@ -43,7 +48,7 @@ export function smokeChecks(rec: AnalysisRecord, pub: PublicationInput, gt: Smok
   const b = rec.usage?.billable;
   c.push({ check: 'Tokens facturés relevés', ok: !!b, detail: b ? `entrée ${b.inputTokens}, sortie ${b.outputTokens}, raisonnement ${b.reasoningTokens ?? 'n/d'}` : 'usage absent' });
   const cacheWrites = (raw.cache_creation_input_tokens ?? 0) + (raw.input_tokens_details?.cache_write_tokens ?? 0);
-  c.push({ check: 'Aucun coût d’écriture en cache', ok: cacheWrites === 0, detail: `écritures en cache : ${cacheWrites}` });
+  c.push({ check: 'Aucun coût d’écriture en cache', ok: rec.usage ? cacheWrites === 0 : null, detail: rec.usage ? `écritures en cache : ${cacheWrites}` : 'sans objet (aucun usage renvoyé)' });
   c.push({ check: 'Coût réel ≤ maximum réservé', ok: rec.costEur !== null && !rec.costUncertain && rec.costEur <= reservedMaxEur, detail: `${rec.costEur} € / ${reservedMaxEur} €${rec.costUncertain ? ' (INCERTAIN)' : ''}` });
   return c;
 }

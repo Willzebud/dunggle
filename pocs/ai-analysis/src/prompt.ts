@@ -22,9 +22,9 @@ Réponds uniquement par l'objet JSON demandé.
 - novelty (1–5) : importance technologique de la nouveauté, évaluée SÉPARÉMENT de la pertinence.
 - confidence (0–1) : ta confiance dans la classification ; baisse-la quand seules les métadonnées sont fournies.
 - relevanceReason : une phrase en français, fondée uniquement sur les informations fournies.
-- summary / keyPoints : en français, UNIQUEMENT à partir du texte fourni. Si aucun texte n'est fourni, summary = null et keyPoints = []. Si le texte est un extrait, ne dépasse pas ce qu'il contient. N'invente aucun fait, chiffre, nom ou date.
-- exclusionReason : null, ou un motif parmi ${EXCLUSION_REASONS.join(', ')}. N'exclus jamais une publication parce que son contenu est absent ou que sa nouveauté est faible. Les levées de fonds, résultats financiers, nominations, classements et contenus promotionnels sans nouveauté technique sont exclus.
-- Si exclusionReason n'est pas null, summary = null et keyPoints = [] : ne résume pas une publication que tu exclus.`;
+- summary / keyPoints : en français, UNIQUEMENT à partir du texte fourni. Si aucun texte n'est fourni, summary = "" (chaîne vide) et keyPoints = []. Si le texte est un extrait, ne dépasse pas ce qu'il contient. N'invente aucun fait, chiffre, nom ou date.
+- exclusionReason : "none" si la publication n'est pas exclue, sinon un motif parmi ${EXCLUSION_REASONS.join(', ')}. N'exclus jamais une publication parce que son contenu est absent ou que sa nouveauté est faible. Les levées de fonds, résultats financiers, nominations, classements et contenus promotionnels sans nouveauté technique sont exclus.
+- Si exclusionReason n'est pas "none", summary = "" et keyPoints = [] : ne résume pas une publication que tu exclus.`;
 
 export interface BuiltPrompt {
   system: string;

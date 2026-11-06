@@ -112,3 +112,25 @@ Coût maximal réservé : **0,001411 €** (Haiku 5.5) + **0,001639 €** (GPT-6
 - **Limite OpenAI de 1 requête/minute** : au moins 61 s entre deux requêtes réelles OpenAI d’une même exécution (`PROVIDER_MIN_INTERVAL_MS`). Sans effet sur B.1 (une requête OpenAI). Un 429 n’est jamais relancé : il est compté et arrête l’exécution.
 - **À traiter avant B.2** : avec cet espacement, B.2 dure environ 38 minutes, au-delà de l’activation en mémoire (30 minutes). Les appels suivants seraient refusés avant envoi, ce qui est sûr mais incomplet. Il faudra ajuster la durée pour B.2.
 - Tests : 11/11 et 135/135 (dont 9 nouveaux : `tests/b1-preflight.test.ts`).
+
+## 8. Incident B.1 et reprise (2026-11-06)
+
+**Incident :** le premier appel réel (Claude Haiku 5.5, requête `req_011Cgn4kjg6cEFjYpA4ZQLCh`) a été refusé par Anthropic avec un HTTP 400 : `output_config.format.schema: Invalid schema: Enum value 'funding_only' does not match declared type '['string', 'null']'`. Cause : `exclusionReason` combinait `type: ['string','null']` et un `enum` contenant `null`. Coût 0 €, aucun usage renvoyé. L’exécution s’est arrêtée avant GPT-6 Luna, comme prévu. La tentative reste comptée (B.1 Haiku : 1).
+
+**Documentation relue le 2026-11-06 :**
+- Anthropic, « JSON Schema limitations » : enum de chaînes, nombres, booléens ou nulls ; `anyOf` supporté ; `additionalProperties: false` obligatoire ; pas de contraintes numériques ni de longueur ; au plus 16 paramètres « union » (`anyOf` ou tableaux de types), décrits comme coûteux.
+- OpenAI, « Supported schemas » : tous les champs dans `required` ; `additionalProperties: false` ; racine objet sans `anyOf` ; champ optionnel émulé par une union avec `null`.
+
+**Correction :** le schéma transport n’utilise plus aucune union (ni tableau de types, ni `anyOf`, ni `null`). L’absence est représentée par des sentinelles explicites : `summary: ""` (aucun résumé) et `exclusionReason: "none"` (aucune exclusion). `validateAnalysis()` les convertit en `null` ; la forme interne et le pipeline sont inchangés. Le contrôle hors ligne `providerSchemaProblems()` applique au schéma entier les règles communes aux deux fournisseurs, plus la règle « aucune union ». Il ne remplace pas la validation des fournisseurs. `PROMPT_VERSION` change avec le schéma.
+
+**Affichage :** le contrôle « Authentification et appel » est remplacé par « Authentification » (clé acceptée, refusée ou indéterminée) et « Appel abouti (réponse reçue) ». Un refus 400 apparaît donc en échec.
+
+**Reprise (option A) :** `PHASE_QUOTA_EXCEPTIONS` (`src/config/quotas.ts`) est une liste fermée, figée et versionnée. Elle contient une seule exception : +1 tentative cumulative pour `anthropic-haiku-5-5` en B.1, liée à l’incident.
+- Aucun compteur remis à zéro ; budget de 0,50 €, quotas de production et B.2 inchangés.
+- B.1 passe à 2 tentatives Haiku, 1 Luna (inchangé), 3 au total ; une seule tentative par modèle et par exécution.
+- Il faut une nouvelle autorisation locale (la précédente est consommée) ; pas de relance automatique ; un coût incertain bloque.
+- Une 3e tentative Haiku, une 2e Luna ou une 4e tentative B.1 sont refusées par le garde (testé).
+
+**Plan de reprise :** Haiku 0,001433 € + Luna 0,001666 € = **0,003099 €** au maximum (borne d’entrée 7 460 tokens). La confirmation de 0,004 € reste suffisante.
+
+Tests : 11/11 et 145/145 (dont `tests/b1-retry.test.ts`).

@@ -5,7 +5,7 @@ import { DEFAULT_LIMITS, type BudgetLimits } from '../config/budget.js';
 import { MODELS, type ModelConfig, type PriceTier } from '../config/models.js';
 import type { AnalysisEntry, BudgetStore, LedgerState, Reservation, UncertainEntry } from './store.js';
 import { redactDeep, redactSecrets } from '../security/redact.js';
-import { POC_PHASES, PRODUCTION_QUOTAS, type ProductionQuotas, type QuotaContext } from '../config/quotas.js';
+import { POC_PHASES, PRODUCTION_QUOTAS, phaseModelMax, phaseTotalMax, type ProductionQuotas, type QuotaContext } from '../config/quotas.js';
 import { parisDay, parisMonth } from '../quota/time.js';
 
 export type RefusalCode =
@@ -215,8 +215,11 @@ export class BudgetGuard {
     } else {
       const P = POC_PHASES[q.phase];
       const ph = Q.phases[q.phase] ?? { total: 0, perModel: {} };
-      if (ph.total >= P.totalMax) throw new BudgetRefusedError('quota-phase-total', `Quota de la phase ${q.phase} atteint (${P.totalMax} appels au total)`);
-      if ((ph.perModel[modelKey] ?? 0) >= P.perModelMax) throw new BudgetRefusedError('quota-phase-model', `Quota de la phase ${q.phase} atteint pour ${modelKey} (${P.perModelMax})`);
+      // Plafonds cumulatifs = base + exceptions versionnées ; le plafond par exécution reste celui de base.
+      const totalMax = phaseTotalMax(q.phase);
+      const modelMax = phaseModelMax(q.phase, modelKey);
+      if (ph.total >= totalMax) throw new BudgetRefusedError('quota-phase-total', `Quota de la phase ${q.phase} atteint (${totalMax} appels au total)`);
+      if ((ph.perModel[modelKey] ?? 0) >= modelMax) throw new BudgetRefusedError('quota-phase-model', `Quota de la phase ${q.phase} atteint pour ${modelKey} (${modelMax})`);
       if (run >= P.totalMax) throw new BudgetRefusedError('quota-run', `Quota de l’exécution atteint (${P.totalMax} appels)`);
     }
     return () => {

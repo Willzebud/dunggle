@@ -3,7 +3,7 @@ import type { BudgetGuard } from '../budget/guard.js';
 import type { AIAdapter } from '../adapters/types.js';
 import { apiKeyConfigured, apiKeyFormatProblem } from '../adapters/real.js';
 import { MODELS } from '../config/models.js';
-import { POC_PHASES, PROVIDER_MIN_INTERVAL_MS } from '../config/quotas.js';
+import { PROVIDER_MIN_INTERVAL_MS, phaseTotalMax } from '../config/quotas.js';
 import { analyzePublication } from '../pipeline.js';
 import { activationAllows, type RealCallActivation } from '../security/activation.js';
 import type { AnalysisRecord } from '../types.js';
@@ -53,9 +53,9 @@ export async function realRunBlockers(args: RunArgs, plan: RunPlan, deps: Omit<R
   if (Object.keys(s.reservations).length) b.push(`${Object.keys(s.reservations).length} réservation(s) ouverte(s) : processus concurrent ou interrompu`);
   const remaining = deps.guard.limits.trialTotalCapEur - s.trial.spentEur - s.trial.reservedEur;
   if (remaining < plan.totalMaxEur) b.push(`Budget d’essai restant ${Math.max(0, remaining).toFixed(6)} € < coût maximal du plan ${plan.totalMaxEur} €`);
-  const P = POC_PHASES[plan.phase];
+  const totalMax = phaseTotalMax(plan.phase);
   const used = s.quotas?.phases?.[plan.phase]?.total ?? 0;
-  if (used + plan.calls.length > P.totalMax) b.push(`Quota de la phase ${plan.phase} insuffisant (${used}/${P.totalMax} déjà utilisés)`);
+  if (used + plan.calls.length > totalMax) b.push(`Quota de la phase ${plan.phase} insuffisant (${used}/${totalMax} déjà utilisés)`);
   if (plan.calls.length === 0) b.push('Aucun appel à effectuer (déjà analysé, ou quota de phase épuisé)');
   return b;
 }

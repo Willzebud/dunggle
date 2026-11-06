@@ -2,13 +2,23 @@ import { EXCLUSION_REASONS, PUBLICATION_TYPES, THEMES, isKnownSubtheme } from '.
 import type { AnalysisOutput } from './types.js';
 
 /**
- * Schéma JSON envoyé aux fournisseurs (sortie structurée).
- * Compatible avec les deux fournisseurs vérifiés le 2026-11-06 :
- * - Anthropic `output_config.format` (type "json_schema") : additionalProperties:false obligatoire,
- *   pas de contraintes numériques (minimum/maximum), pas de minLength/maxLength.
- * - OpenAI Responses `text.format` (json_schema, strict:true) : tous les champs dans `required`.
- * Les bornes (relevance 0–100, confidence 0–1, longueurs) sont donc vérifiées LOCALEMENT par validateAnalysis().
+ * Schéma JSON envoyé aux fournisseurs (sortie structurée), dans sa forme « transport ».
+ *
+ * Incident B.1 (2026-11-06, req_011Cgn4kjg6cEFjYpA4ZQLCh) : Anthropic a refusé (HTTP 400)
+ * `exclusionReason: { type: ['string','null'], enum: [..., null] }` avec « Enum value 'funding_only' does not
+ * match declared type '['string', 'null']' ». Les deux documentations (vérifiées le 2026-11-06) acceptent en
+ * principe les types multiples et `anyOf`, mais Anthropic les compte comme « union types » coûteux, et leur
+ * combinaison avec `enum` vient d'échouer en production. Le schéma n'utilise donc PLUS AUCUNE union :
+ * - aucun tableau de types, aucun `anyOf`/`allOf`/`oneOf`, aucun `null` ;
+ * - « absence » représentée par des sentinelles explicites : summary = "" (aucun résumé),
+ *   exclusionReason = "none" (aucune exclusion), converties en null par validateAnalysis() ;
+ * - additionalProperties:false sur tout objet, tous les champs dans `required` (exigence OpenAI strict) ;
+ * - aucune contrainte numérique ou de longueur (non supportées par Anthropic) : bornes vérifiées localement.
+ * Le contrôle hors ligne `providerSchemaProblems()` applique ces règles à tout le schéma (tests de non-régression).
  */
+export const NO_EXCLUSION = 'none' as const;
+export const NO_SUMMARY = '' as const;
+
 export const ANALYSIS_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -22,11 +32,63 @@ export const ANALYSIS_JSON_SCHEMA = {
     novelty: { type: 'integer', description: 'Importance de la nouveauté, entier de 1 à 5' },
     confidence: { type: 'number', description: 'Confiance de 0 à 1' },
     relevanceReason: { type: 'string' },
-    summary: { type: ['string', 'null'] },
+    summary: { type: 'string', description: 'Résumé en français, ou chaîne vide si aucun résumé' },
     keyPoints: { type: 'array', items: { type: 'string' } },
-    exclusionReason: { type: ['string', 'null'], enum: [...EXCLUSION_REASONS, null] },
+    exclusionReason: { type: 'string', enum: [...EXCLUSION_REASONS, NO_EXCLUSION], description: '"none" si la publication n’est pas exclue' },
   },
 } as const;
+
+/**
+ * Contrôle hors ligne des règles COMMUNES aux deux fournisseurs (documentations Anthropic « JSON Schema
+ * limitations » et OpenAI « Supported schemas », relues le 2026-11-06), plus la règle prudente « aucune union ».
+ * Retourne la liste des violations (chemin : problème). Ne remplace pas la validation du fournisseur.
+ */
+export function providerSchemaProblems(schema: unknown): string[] {
+  const out: string[] = [];
+  const FORBIDDEN = ['anyOf', 'allOf', 'oneOf', 'not', 'if', 'then', 'else', '$ref', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf', 'minLength', 'maxLength', 'maxItems', 'pattern', 'format', 'patternProperties', 'dependentRequired', 'dependentSchemas'];
+  const BASIC = ['object', 'array', 'string', 'integer', 'number', 'boolean'];
+  let enumCount = 0;
+  const walk = (node: unknown, path: string, depth: number) => {
+    if (!node || typeof node !== 'object' || Array.isArray(node)) return void out.push(`${path} : sous-schéma objet attendu`);
+    const n = node as Record<string, unknown>;
+    for (const k of FORBIDDEN) if (k in n) out.push(`${path} : mot-clé « ${k} » interdit`);
+    if (Array.isArray(n.type)) out.push(`${path} : tableau de types (union) interdit`);
+    else if (typeof n.type !== 'string' || !BASIC.includes(n.type)) out.push(`${path} : type simple attendu (${BASIC.join(', ')})`);
+    if ('enum' in n) {
+      const e = n.enum;
+      if (!Array.isArray(e) || e.length === 0) out.push(`${path} : enum non vide attendu`);
+      else {
+        enumCount += e.length;
+        if (new Set(e).size !== e.length) out.push(`${path} : valeurs d’enum en double`);
+        for (const v of e) {
+          if (v === null) out.push(`${path} : null dans enum interdit`);
+          else if (n.type === 'string' && typeof v !== 'string') out.push(`${path} : valeur d’enum ${JSON.stringify(v)} hors type string`);
+          else if (n.type !== 'string') out.push(`${path} : enum autorisé seulement sur type string`);
+        }
+        const lower = e.filter((v): v is string => typeof v === 'string').map((v) => v.toLowerCase());
+        if (new Set(lower).size !== lower.length) out.push(`${path} : valeurs d’enum ne différant que par la casse`);
+      }
+    }
+    if ('minItems' in n && n.minItems !== 0 && n.minItems !== 1) out.push(`${path} : minItems limité à 0 ou 1`);
+    if (n.type === 'object') {
+      if (depth > 10) out.push(`${path} : imbrication > 10 niveaux`);
+      if (n.additionalProperties !== false) out.push(`${path} : additionalProperties:false obligatoire`);
+      const props = (n.properties ?? {}) as Record<string, unknown>;
+      const req = Array.isArray(n.required) ? (n.required as string[]) : [];
+      for (const k of Object.keys(props)) if (!req.includes(k)) out.push(`${path}.${k} : propriété absente de required`);
+      for (const k of req) if (!(k in props)) out.push(`${path} : required « ${k} » sans propriété`);
+      for (const [k, v] of Object.entries(props)) walk(v, `${path}.${k}`, depth + 1);
+    }
+    if (n.type === 'array') {
+      if (!('items' in n)) out.push(`${path} : items obligatoire`);
+      else walk(n.items, `${path}[]`, depth + 1);
+    }
+  };
+  walk(schema, '$', 1);
+  if (schema && typeof schema === 'object' && (schema as Record<string, unknown>).type !== 'object') out.push('$ : la racine doit être un objet');
+  if (enumCount > 1000) out.push(`$ : ${enumCount} valeurs d’enum (> 1000)`);
+  return out;
+}
 
 export const LIMITS = {
   maxThemes: 4,
@@ -57,8 +119,12 @@ export function validateAnalysis(input: unknown): ValidationResult {
   }
   const errors: string[] = [];
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return { ok: false, errors: ['objet attendu'], value: null };
-  const o = obj as Record<string, unknown>;
+  // Forme transport → forme interne : sentinelles explicites converties en null (copie, entrée non modifiée).
+  const o = { ...(obj as Record<string, unknown>) };
+  if (o.summary === NO_SUMMARY) o.summary = null;
+  if (o.exclusionReason === NO_EXCLUSION) o.exclusionReason = null;
 
+  if (typeof o.summary === 'string' && o.summary.length > 0 && !o.summary.trim()) errors.push('summary : blancs seuls interdits (chaîne vide = aucun résumé)');
   const allowed = new Set(Object.keys(ANALYSIS_JSON_SCHEMA.properties));
   for (const k of Object.keys(o)) if (!allowed.has(k)) errors.push(`champ inattendu : ${k}`);
   for (const k of ANALYSIS_JSON_SCHEMA.required) if (!(k in o)) errors.push(`champ manquant : ${k}`);

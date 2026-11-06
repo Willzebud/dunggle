@@ -217,15 +217,17 @@ test('file d’attente : couverture obligatoire en premier, expiration après 14
 });
 
 // ------------------------------------------------------------------ POC : règles distinctes
-test('POC B.1 : un appel par modèle, deux au total ; B.1 non rejouable ; B.2 non remis à zéro', async () => {
+test('POC B.1 : un appel par modèle (+1 Haiku par exception versionnée) ; B.1 non rejouable ; B.2 non remis à zéro', async () => {
   const g = new BudgetGuard(new MemoryBudgetStore());
   const q = { scope: 'trial' as const, phase: 'B1' as const, runId: 'b1' };
   await g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 1000, quota: q });
-  await assert.rejects(g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 1000, quota: q }), (e) => code(e) === 'quota-phase-model');
-  await g.reserve({ modelKey: 'openai-gpt-6-luna', inputTokensEstimate: 1000, quota: q });
-  await assert.rejects(g.reserve({ modelKey: 'openai-gpt-6-luna', inputTokensEstimate: 1000, quota: { ...q, runId: 'b1-bis' } }), (e) => ['quota-phase-total', 'quota-phase-model'].includes(code(e)));
+  // Exception B.1 (incident HTTP 400) : une seule tentative Haiku supplémentaire, dans une autre exécution.
+  await g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 1000, idempotencyKey: 'reprise', quota: { ...q, runId: 'b1-reprise' } });
+  await assert.rejects(g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 1000, idempotencyKey: 'encore', quota: { ...q, runId: 'b1-ter' } }), (e) => code(e) === 'quota-phase-model');
+  await g.reserve({ modelKey: 'openai-gpt-6-luna', inputTokensEstimate: 1000, quota: { ...q, runId: 'b1-luna' } });
+  await assert.rejects(g.reserve({ modelKey: 'openai-gpt-6-luna', inputTokensEstimate: 1000, idempotencyKey: 'luna-bis', quota: { ...q, runId: 'b1-bis' } }), (e) => ['quota-phase-total', 'quota-phase-model'].includes(code(e)));
   const s = await g.snapshot();
-  assert.equal(s.quotas.phases.B1.total, 2);
+  assert.equal(s.quotas.phases.B1.total, 3);
   // B.1 terminé : le plan smoke ne propose plus rien
   assert.equal(planRun(parseArgs(['--mode=smoke']), evaluationSet.items, g, s).calls.length, 0);
   // B.2 : quota de phase propre (37/modèle, 74 au total), budget d'essai cumulé conservé

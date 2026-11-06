@@ -35,6 +35,46 @@ export const POC_PHASES: Readonly<Record<PocPhase, Readonly<PocPhaseQuotas>>> = 
   B2: Object.freeze({ mode: 'full', perModelMax: 37, totalMax: 74, description: 'Évaluation complète : jusqu’à 37 publications par modèle' }),
 });
 
+/**
+ * Exceptions de quota de phase : liste FERMÉE, versionnée et figée (toute modification passe par un commit relu).
+ * Chacune n'ajoute qu'UNE tentative cumulative à un seul modèle d'une seule phase, après un incident documenté.
+ * Elle ne remet aucun compteur à zéro, ne change ni le budget de 0,50 €, ni les quotas de production, ni B.2,
+ * ni le plafond PAR EXÉCUTION (B.1 : un appel par modèle et deux au total par exécution).
+ */
+export interface PhaseQuotaException {
+  phase: PocPhase;
+  modelKey: string;
+  extraCalls: 1;
+  incident: { date: string; requestId: string; httpStatus: number; cause: string; billed: false };
+  approval: string;
+}
+
+export const PHASE_QUOTA_EXCEPTIONS: readonly Readonly<PhaseQuotaException>[] = Object.freeze([
+  Object.freeze({
+    phase: 'B1',
+    modelKey: 'anthropic-haiku-5-5',
+    extraCalls: 1,
+    incident: Object.freeze({
+      date: '2026-11-06',
+      requestId: 'req_011Cgn4kjg6cEFjYpA4ZQLCh',
+      httpStatus: 400,
+      cause: 'Schéma refusé (enum + type ["string","null"] sur exclusionReason) ; schéma corrigé sans union',
+      billed: false,
+    }),
+    approval: 'Option A validée par l’utilisateur le 2026-11-06 ; l’appel réel exige une nouvelle autorisation locale',
+  } as const),
+]);
+
+/** Plafond cumulatif d'appels d'un modèle dans une phase (base + exceptions). */
+export function phaseModelMax(phase: PocPhase, modelKey: string): number {
+  return POC_PHASES[phase].perModelMax + PHASE_QUOTA_EXCEPTIONS.filter((e) => e.phase === phase && e.modelKey === modelKey).reduce((s, e) => s + e.extraCalls, 0);
+}
+
+/** Plafond cumulatif total d'une phase (base + exceptions). */
+export function phaseTotalMax(phase: PocPhase): number {
+  return POC_PHASES[phase].totalMax + PHASE_QUOTA_EXCEPTIONS.filter((e) => e.phase === phase).reduce((s, e) => s + e.extraCalls, 0);
+}
+
 export const phaseForMode = (mode: 'smoke' | 'full'): PocPhase => (mode === 'smoke' ? 'B1' : 'B2');
 
 /** Contexte de quota attaché à chaque réservation. Obligatoire pour tout appel réel. */

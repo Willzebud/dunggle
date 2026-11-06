@@ -6,7 +6,7 @@ import { analysisKey } from '../pipeline.js';
 import { buildPrompt } from '../prompt.js';
 import type { PublicationInput } from '../types.js';
 import type { RunArgs } from './args.js';
-import { POC_PHASES, phaseForMode, type PocPhase } from '../config/quotas.js';
+import { POC_PHASES, phaseForMode, phaseModelMax, phaseTotalMax, type PocPhase } from '../config/quotas.js';
 
 /** Fixture synthétique FULL commune aux deux smoke tests (contenu rédigé pour le POC, aucun texte tiers). */
 export const SMOKE_FIXTURE_ID = 'synthetic:orion-multimodal';
@@ -51,13 +51,13 @@ export function planRun(args: RunArgs, items: PublicationInput[], guard: BudgetG
   const P = POC_PHASES[phase];
   const used = ledger?.quotas?.phases?.[phase];
   const perModel = Math.min(args.maxCalls ?? RUN_CALL_LIMITS[args.mode], RUN_CALL_LIMITS[args.mode]);
-  let phaseRemaining = P.totalMax - (used?.total ?? 0);
+  let phaseRemaining = phaseTotalMax(phase) - (used?.total ?? 0);
   const calls: PlannedCall[] = [];
   const skipped: RunPlan['skipped'] = [];
   for (const modelKey of args.models) {
     let n = 0;
     // Quota de phase cumulatif (jamais remis à zéro) : appels déjà tentés pour ce modèle.
-    const modelRemaining = P.perModelMax - (used?.perModel?.[modelKey] ?? 0);
+    const modelRemaining = phaseModelMax(phase, modelKey) - (used?.perModel?.[modelKey] ?? 0);
     for (const p of unique) {
       const key = analysisKey(modelKey, p.id);
       const prev = ledger?.analyses?.[key];
