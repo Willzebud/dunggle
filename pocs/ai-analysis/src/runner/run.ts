@@ -3,7 +3,8 @@ import type { BudgetGuard } from '../budget/guard.js';
 import type { AIAdapter } from '../adapters/types.js';
 import { apiKeyConfigured, apiKeyFormatProblem } from '../adapters/real.js';
 import { MODELS } from '../config/models.js';
-import { PROVIDER_MIN_INTERVAL_MS, phaseTotalMax } from '../config/quotas.js';
+import { PROVIDER_MIN_GAP_AFTER_END_MS, phaseTotalMax } from '../config/quotas.js';
+import { MemoryPacingStore, ProviderPacer, type Provider } from './pacing.js';
 import { analyzePublication } from '../pipeline.js';
 import { activationAllows, type RealCallActivation } from '../security/activation.js';
 import type { AnalysisRecord } from '../types.js';
@@ -21,23 +22,45 @@ export interface RunDeps {
   sleep?: (ms: number) => Promise<void>;
   /** Interruption demandée (Ctrl+C) : l'exécution s'arrête proprement AVANT la réservation suivante. */
   shouldStop?: () => boolean;
+  /** Temporisation par fournisseur ; réel : persistante (var/provider-pacing.json). Défaut : en mémoire. */
+  pacer?: ProviderPacer;
+}
+
+const providerOf = (modelKey: string): Provider => (MODELS[modelKey]?.provider === 'anthropic' ? 'anthropic' : 'openai');
+
+/** Attente interruptible (tranches d'au plus 1 s) ; renvoie false si une interruption a été demandée. */
+async function waitUntil(t: number, now: () => number, sleep: (ms: number) => Promise<void>, shouldStop?: () => boolean): Promise<boolean> {
+  while (now() < t) {
+    if (shouldStop?.()) return false;
+    await sleep(Math.min(1_000, t - now()));
+  }
+  return !shouldStop?.();
 }
 
 /** Hypothèses de durée par appel : régime typique observé en B.1 (quelques secondes) et pire cas (délai SDK). */
 export const CALL_LATENCY_ASSUMPTIONS_MS = Object.freeze({ typical: 15_000, worst: 60_000 });
 
-/** Durée estimée d'une exécution (simulation de l'ordre réel et de l'espacement par fournisseur). */
-export function estimateRunDurationMs(plan: Pick<RunPlan, 'calls'>, latencyMs: number): number {
+/**
+ * Durée estimée d'une exécution : ordre réel des appels, délai minimal APRÈS LA FIN de la requête précédente du
+ * même fournisseur, et contraintes déjà persistées (`initialEarliestMs` : délai avant la première requête possible).
+ */
+export function estimateRunDurationMs(plan: Pick<RunPlan, 'calls'>, latencyMs: number, initialEarliestMs: Partial<Record<Provider, number>> = {}): number {
   let t = 0;
-  const last = new Map<string, number>();
+  const earliest = new Map<Provider, number>(Object.entries(initialEarliestMs) as [Provider, number][]);
   for (const c of plan.calls) {
-    const provider = MODELS[c.modelKey]?.provider === 'anthropic' ? 'anthropic' : 'openai';
-    const prev = last.get(provider);
-    if (prev !== undefined) t = Math.max(t, prev + PROVIDER_MIN_INTERVAL_MS[provider]);
-    last.set(provider, t);
+    const p = providerOf(c.modelKey);
+    t = Math.max(t, earliest.get(p) ?? 0);
     t += latencyMs;
+    earliest.set(p, t + PROVIDER_MIN_GAP_AFTER_END_MS[p]);
   }
   return t;
+}
+
+/** Délais restants (ms) avant la première requête possible par fournisseur, d'après l'état persistant. */
+export async function pacingOffsets(pacer: ProviderPacer, now: number): Promise<Partial<Record<Provider, number>>> {
+  const o: Partial<Record<Provider, number>> = {};
+  for (const p of ['anthropic', 'openai'] as const) o[p] = Math.max(0, (await pacer.earliestStart(p)) - now);
+  return o;
 }
 
 export interface RunReport {
@@ -95,9 +118,11 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
   }
   if (deps.activation && deps.activation.phase !== plan.phase) blockers.push(`Activation délivrée pour ${deps.activation.phase}, plan ${plan.phase}`);
   if (deps.activation && args.confirmMaxEur !== null && args.confirmMaxEur > deps.activation.maxEur) blockers.push('Montant confirmé supérieur au montant autorisé');
+  const pacer = deps.pacer ?? new ProviderPacer(new MemoryPacingStore());
   if (deps.activation) {
-    const remaining = deps.activation.validUntil - (deps.now ?? Date.now)();
-    const typical = estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.typical);
+    const t0 = (deps.now ?? Date.now)();
+    const remaining = deps.activation.validUntil - t0;
+    const typical = estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.typical, await pacingOffsets(pacer, t0));
     if (typical * 1.25 > remaining) blockers.push(`Durée estimée (${Math.round(typical / 60_000)} min, marge 25 %) supérieure à la validité restante de l’activation (${Math.round(remaining / 60_000)} min)`);
   }
   if (blockers.length) return { executed: false, blockers, records: [], stoppedReason: null, spentEur: 0, runId: null };
@@ -108,7 +133,6 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
   let stoppedReason: string | null = null;
   const now = deps.now ?? Date.now;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-  const lastCallAt = new Map<string, number>();
   const timings: NonNullable<RunReport['timings']> = [];
   const startedAt = now();
   for (const call of plan.calls) {
@@ -124,16 +148,16 @@ export async function executeRun(args: RunArgs, plan: RunPlan, deps: RunDeps): P
       stoppedReason = 'montant confirmé (--confirm-max-eur) atteint';
       break;
     }
-    // Respect des limites de débit fournisseur (ex. OpenAI 1 requête/minute) AVANT la réservation.
-    const provider = MODELS[call.modelKey].provider === 'anthropic' ? 'anthropic' : 'openai';
-    const last = lastCallAt.get(provider);
-    if (last !== undefined) {
-      const wait = last + PROVIDER_MIN_INTERVAL_MS[provider] - now();
-      if (wait > 0) await sleep(wait);
+    // Limites de débit fournisseur (OpenAI : 75 s après la fin de la précédente, Retry-After, état persistant) :
+    // attente AVANT la réservation, interruptible par Ctrl+C sans laisser de réservation ouverte.
+    const provider = providerOf(call.modelKey);
+    if (!(await waitUntil(await pacer.earliestStart(provider), now, sleep, deps.shouldStop))) {
+      stoppedReason = 'interruption demandée : arrêt avant la réservation suivante (reprise possible sans doublon)';
+      break;
     }
-    lastCallAt.set(provider, now());
     const t0 = now();
-    const rec = await analyzePublication(call.publication, { adapter: deps.adapterFor(call.modelKey), guard: deps.guard, scope: 'trial', quota });
+    const adapter = pacer.wrap(deps.adapterFor(call.modelKey), provider, now, sleep);
+    const rec = await analyzePublication(call.publication, { adapter, guard: deps.guard, scope: 'trial', quota });
     timings.push({ modelKey: call.modelKey, publicationId: call.publication.id, ms: now() - t0 });
     records.push(rec);
     spent += rec.costEur ?? 0;

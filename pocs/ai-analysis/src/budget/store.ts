@@ -15,7 +15,7 @@ export interface Reservation {
   /** Clé d'idempotence de l'analyse couverte par cette réservation. */
   idempotencyKey?: string;
   /** Compteurs de quota incrémentés par cette réservation (décomptés seulement si la requête n'a pas été transmise). */
-  quota?: { context: QuotaContext; dailyKey: string; monthlyKey: string };
+  quota?: { context: QuotaContext; dailyKey: string; monthlyKey: string; exceptionId?: string };
 }
 
 /** Compteurs de tentatives d'appels (persistants, jamais remis à zéro au redémarrage). */
@@ -28,6 +28,8 @@ export interface QuotaCounters {
   runs: Record<string, number>;
   /** phase du POC (B1, B2) → tentatives totales et par modèle (cumulatives). */
   phases: Record<string, { total: number; perModel: Record<string, number> }>;
+  /** Exceptions de quota LIÉES consommées (identifiant → trace). Jamais remises à zéro, sauf requête non transmise. */
+  exceptionsUsed?: Record<string, { at: string; runId: string; reservationId: string; idempotencyKey: string }>;
 }
 
 export const emptyQuotas = (): QuotaCounters => ({ daily: {}, monthly: {}, runs: {}, phases: {} });

@@ -38,19 +38,29 @@ export const POC_PHASES: Readonly<Record<PocPhase, Readonly<PocPhaseQuotas>>> = 
 /**
  * Exceptions de quota de phase : liste FERMÉE, versionnée et figée (toute modification passe par un commit relu).
  * Chacune n'ajoute qu'UNE tentative cumulative à un seul modèle d'une seule phase, après un incident documenté.
- * Elle ne remet aucun compteur à zéro, ne change ni le budget de 0,50 €, ni les quotas de production, ni B.2,
- * ni le plafond PAR EXÉCUTION (B.1 : un appel par modèle et deux au total par exécution).
+ * Elle ne remet aucun compteur à zéro, ne change ni le budget de 0,50 €, ni les quotas de production,
+ * ni le plafond PAR EXÉCUTION.
+ *
+ * Exception LIÉE (`publicationId` renseigné) : la tentative supplémentaire n'est utilisable QUE pour cette
+ * publication, une seule fois (consommation enregistrée dans le registre sous `id`). Les autres appels restent
+ * soumis au plafond de base, comme si l'exception n'existait pas. Exception NON liée (B.1) : relève simplement
+ * le plafond cumulatif du modèle.
  */
 export interface PhaseQuotaException {
+  /** Identifiant stable, clé de consommation dans le registre. */
+  id: string;
   phase: PocPhase;
   modelKey: string;
   extraCalls: 1;
-  incident: { date: string; requestId: string; httpStatus: number; cause: string; billed: false };
+  /** Publication à laquelle la tentative est réservée (exception liée). */
+  publicationId?: string;
+  incident: { date: string; requestId: string | null; runId?: string; reservationId?: string; httpStatus: number; cause: string; billed: false };
   approval: string;
 }
 
 export const PHASE_QUOTA_EXCEPTIONS: readonly Readonly<PhaseQuotaException>[] = Object.freeze([
   Object.freeze({
+    id: 'B1-haiku-http400-2026-11-06',
     phase: 'B1',
     modelKey: 'anthropic-haiku-5-5',
     extraCalls: 1,
@@ -63,7 +73,49 @@ export const PHASE_QUOTA_EXCEPTIONS: readonly Readonly<PhaseQuotaException>[] = 
     }),
     approval: 'Option A validée par l’utilisateur le 2026-11-06 ; l’appel réel exige une nouvelle autorisation locale',
   } as const),
+  Object.freeze({
+    id: 'B2-luna-http429-2026-11-06',
+    phase: 'B2',
+    modelKey: 'openai-gpt-6-luna',
+    extraCalls: 1,
+    publicationId: 'gh-angular-components:433858366',
+    incident: Object.freeze({
+      date: '2026-11-06',
+      requestId: null, // non conservé (en-têtes de réponse non journalisés à l’époque)
+      runId: '5742ce5d-75fc-4ec9-9090-f8d10d94da87',
+      reservationId: '4db6d939-0b41-45d3-bd5b-9cee437f1b60',
+      httpStatus: 429,
+      cause: 'Limite fournisseur de 1 requête/minute (« Limit 1, Used 1, Requested 1 ») ; requête refusée, non facturée, comptée',
+      billed: false,
+    }),
+    approval: 'Exception unique validée par l’utilisateur le 2026-11-06 pour remplacer l’appel Luna refusé ; l’appel réel exige une nouvelle autorisation locale',
+  } as const),
 ]);
+
+const exceptionsFor = (phase: PocPhase, modelKey?: string) => PHASE_QUOTA_EXCEPTIONS.filter((e) => e.phase === phase && (modelKey === undefined || e.modelKey === modelKey));
+
+/**
+ * Exception liée encore disponible pour cette publication (null sinon). Conditions : même phase, même modèle, même
+ * publication, pas encore consommée (`used`), et l'exécution de l'incident présente dans les compteurs du registre
+ * (`runs`) : sans l'incident réel, l'exception n'existe pas. Elle ne s'applique jamais à une tentative de
+ * l'exécution de l'incident elle-même (`currentRunId`) : seulement à une reprise ultérieure.
+ */
+export function boundExceptionFor(phase: PocPhase, modelKey: string, publicationId: string, used: Readonly<Record<string, unknown>>, runs: Readonly<Record<string, number>>, currentRunId: string): Readonly<PhaseQuotaException> | null {
+  return exceptionsFor(phase, modelKey).find((e) => e.publicationId === publicationId && !used[e.id] && !!e.incident.runId && e.incident.runId !== currentRunId && (runs[e.incident.runId] ?? 0) > 0) ?? null;
+}
+
+/** Plafond applicable aux appels ORDINAIRES (base + exceptions non liées) : les exceptions liées n'y comptent pas. */
+export function phaseModelBaseMax(phase: PocPhase, modelKey: string): number {
+  return POC_PHASES[phase].perModelMax + exceptionsFor(phase, modelKey).filter((e) => !e.publicationId).reduce((s, e) => s + e.extraCalls, 0);
+}
+export function phaseTotalBaseMax(phase: PocPhase): number {
+  return POC_PHASES[phase].totalMax + exceptionsFor(phase).filter((e) => !e.publicationId).reduce((s, e) => s + e.extraCalls, 0);
+}
+
+/** Nombre d'exceptions liées déjà consommées (pour un modèle, ou pour toute la phase). */
+export function consumedBoundExceptions(phase: PocPhase, used: Readonly<Record<string, unknown>>, modelKey?: string): number {
+  return exceptionsFor(phase, modelKey).filter((e) => e.publicationId && used[e.id]).length;
+}
 
 /** Plafond cumulatif d'appels d'un modèle dans une phase (base + exceptions). */
 export function phaseModelMax(phase: PocPhase, modelKey: string): number {
@@ -89,8 +141,12 @@ export type QuotaContext = { scope: 'operational'; runId: string } | { scope: 't
 export const PENDING_POLICY = Object.freeze({ maxAgeDays: 14, maxBacklog: 100 });
 
 /**
- * Espacement minimal entre deux requêtes RÉELLES vers un même fournisseur, dans une exécution.
- * OpenAI : projet `dunggle-poc` limité à 1 requête par minute → 61 s (marge d'une seconde). Une requête
- * refusée en 429 serait comptée dans les quotas (transmise) et arrêterait l'exécution : on l'évite en amont.
+ * Délai minimal entre la FIN de la dernière requête réelle vers un fournisseur et le DÉBUT de la suivante.
+ * OpenAI : projet `dunggle-poc` limité à 1 requête par minute. Incident B.2 du 2026-11-06 : 429 avec 61 s
+ * entre les DÉBUTS (54,8 s après la fin de la précédente) → 75 s après la fin, marge conservatrice. Persisté
+ * hors Git (var/provider-pacing.json) : s'applique aussi après une interruption, un redémarrage ou une erreur.
+ * Les indications `Retry-After` / réinitialisation renvoyées par le fournisseur s'ajoutent à ce délai.
  */
-export const PROVIDER_MIN_INTERVAL_MS: Readonly<Record<'anthropic' | 'openai', number>> = Object.freeze({ anthropic: 0, openai: 61_000 });
+export const PROVIDER_MIN_GAP_AFTER_END_MS: Readonly<Record<'anthropic' | 'openai', number>> = Object.freeze({ anthropic: 0, openai: 75_000 });
+/** Requête restée « en vol » (processus tué) : on suppose qu'elle a pu durer jusqu'au délai SDK. */
+export const PROVIDER_REQUEST_TIMEOUT_MS = 60_000;

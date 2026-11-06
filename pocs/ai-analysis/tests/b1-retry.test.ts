@@ -119,9 +119,12 @@ test('Smoke test : une requête refusée n’apparaît jamais comme un appel ré
 });
 
 // ================================================================ Exception de quota B.1
-test('Exception : une seule, figée, B.1 uniquement, Haiku uniquement, +1 tentative ; rien d’autre ne change', () => {
-  assert.equal(PHASE_QUOTA_EXCEPTIONS.length, 1);
-  const e = PHASE_QUOTA_EXCEPTIONS[0];
+test('Exception B.1 : figée, B.1 uniquement, Haiku uniquement, +1 tentative ; rien d’autre ne change', () => {
+  // Deux exceptions versionnées : B.1 Haiku (HTTP 400) et B.2 Luna (HTTP 429, liée à sa publication).
+  assert.equal(PHASE_QUOTA_EXCEPTIONS.length, 2);
+  assert.equal(PHASE_QUOTA_EXCEPTIONS.filter((x) => x.phase === 'B1').length, 1);
+  const e = PHASE_QUOTA_EXCEPTIONS.find((x) => x.phase === 'B1')!;
+  assert.equal(e.publicationId, undefined, 'exception B.1 non liée (comportement inchangé)');
   assert.deepEqual([e.phase, e.modelKey, e.extraCalls, e.incident.requestId, e.incident.billed], ['B1', HAIKU, 1, 'req_011Cgn4kjg6cEFjYpA4ZQLCh', false]);
   assert.ok(Object.isFrozen(PHASE_QUOTA_EXCEPTIONS) && Object.isFrozen(e) && Object.isFrozen(e.incident));
   assert.throws(() => (PHASE_QUOTA_EXCEPTIONS as unknown as unknown[]).push({}));
@@ -129,7 +132,8 @@ test('Exception : une seule, figée, B.1 uniquement, Haiku uniquement, +1 tentat
   assert.equal(phaseModelMax('B1', LUNA), 1, 'quota Luna inchangé');
   assert.equal(phaseTotalMax('B1'), 3);
   assert.equal(phaseModelMax('B2', HAIKU), 37);
-  assert.equal(phaseTotalMax('B2'), 74);
+  assert.equal(phaseModelMax('B2', LUNA), 38, 'B.2 : +1 Luna (exception liée)');
+  assert.equal(phaseTotalMax('B2'), 75);
   assert.deepEqual({ ...POC_PHASES.B1 }, { mode: 'smoke', perModelMax: 1, totalMax: 2, description: POC_PHASES.B1.description });
   assert.deepEqual({ ...PRODUCTION_QUOTAS }, { dailyMax: 20, monthlyMax: 500, perRunMax: 10 });
   assert.equal(DEFAULT_LIMITS.trialTotalCapEur, 0.5);

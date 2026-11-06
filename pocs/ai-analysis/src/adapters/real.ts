@@ -89,14 +89,17 @@ export const SDK_OPTIONS = { maxRetries: 0, timeout: 60_000 } as const;
  * - 5xx, délai dépassé, coupure réseau : la requête a pu être traitée → coût incertain (requestSent = true).
  * Le message est masqué (aucun secret) avant d'être propagé.
  */
-export function classifySdkError(e: unknown): ProviderError {
-  const err = e as { status?: number; name?: string; message?: string };
+export function classifySdkError(e: unknown, nowMs: number = Date.now()): ProviderError {
+  const err = e as { status?: number; name?: string; message?: string; headers?: unknown };
   const msg = redactSecrets(String(err?.message ?? e));
   const status = typeof err?.status === 'number' ? err.status : undefined;
   if (status !== undefined && status >= 400 && status < 500) {
     const kind = status === 401 || status === 403 ? 'auth' : status === 429 ? 'rate-limit' : 'invalid-request';
+    const headers = rateLimitHeaders(err?.headers);
+    const retryAfterMs = retryAfterFrom(headers, msg, nowMs);
+    const info = Object.keys(headers).length ? ` [en-têtes : ${Object.entries(headers).map(([k, v]) => `${k}=${v}`).join(', ')}]` : ' [aucun en-tête de limitation reçu]';
     // Refusée par le fournisseur : non facturée, mais TRANSMISE (compte dans les quotas).
-    return new ProviderError(kind, `HTTP ${status} : ${msg}`, false, null, true);
+    return new ProviderError(kind, `HTTP ${status} : ${msg}${info}`, false, null, true, retryAfterMs);
   }
   if (status !== undefined && status >= 500) return new ProviderError('server', `HTTP ${status} : ${msg}`, true);
   if (/timeout/i.test(err?.name ?? '') || /timed? ?out/i.test(msg)) return new ProviderError('timeout', msg, true);
@@ -146,6 +149,70 @@ export class AnthropicAdapter implements AIAdapter {
     const rawText = (res?.content ?? []).filter((b: any) => b?.type === 'text').map((b: any) => String(b.text)).join('');
     return { rawText, usage, stopReason: res?.stop_reason ?? null, rawUsage: numericOnly(res?.usage) };
   }
+}
+
+/** En-têtes de limitation conservés (liste blanche : aucun secret). Accepte un objet Headers ou un dictionnaire. */
+export const RATE_LIMIT_HEADER_WHITELIST = Object.freeze([
+  'retry-after', 'retry-after-ms', 'x-request-id', 'request-id',
+  'x-ratelimit-limit-requests', 'x-ratelimit-remaining-requests', 'x-ratelimit-reset-requests',
+  'x-ratelimit-limit-tokens', 'x-ratelimit-remaining-tokens', 'x-ratelimit-reset-tokens',
+  'anthropic-ratelimit-requests-limit', 'anthropic-ratelimit-requests-remaining', 'anthropic-ratelimit-requests-reset',
+  'anthropic-ratelimit-tokens-reset', 'anthropic-ratelimit-input-tokens-reset', 'anthropic-ratelimit-output-tokens-reset',
+]);
+export function rateLimitHeaders(h: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!h || typeof h !== 'object') return out;
+  const get = typeof (h as { get?: unknown }).get === 'function'
+    ? (k: string) => (h as { get(k: string): string | null }).get(k)
+    : (k: string) => {
+        const e = Object.entries(h as Record<string, unknown>).find(([n]) => n.toLowerCase() === k);
+        return e && e[1] != null ? String(e[1]) : null;
+      };
+  for (const k of RATE_LIMIT_HEADER_WHITELIST) {
+    const v = get(k);
+    if (v != null && v !== '') out[k] = redactSecrets(String(v)).slice(0, 100);
+  }
+  return out;
+}
+
+/** Durée au format OpenAI (« 1m0s », « 6.5s », « 120ms », « 1h2m3s ») → ms ; null si illisible. */
+export function parseDurationMs(s: string): number | null {
+  const t = s.trim();
+  if (!/^(\d+(\.\d+)?(h|ms|m|s))+$/.test(t)) return null;
+  let ms = 0;
+  for (const [, n, u] of t.matchAll(/(\d+(?:\.\d+)?)(h|ms|m|s)/g)) ms += Number(n) * (u === 'h' ? 3_600_000 : u === 'm' ? 60_000 : u === 's' ? 1_000 : 1);
+  return Math.ceil(ms);
+}
+
+/**
+ * Délai d'attente le plus long parmi les indications disponibles : retry-after-ms, retry-after (secondes ou date HTTP),
+ * réinitialisations OpenAI (durée) et Anthropic (date RFC 3339), et « try again in … » du message. null si aucune.
+ */
+export function retryAfterFrom(headers: Record<string, string>, message: string, nowMs: number): number | null {
+  const c: number[] = [];
+  const num = (v?: string) => (v !== undefined && /^\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : null);
+  const ms = num(headers['retry-after-ms']);
+  if (ms !== null) c.push(ms);
+  const ra = headers['retry-after'];
+  if (ra !== undefined) {
+    const sec = num(ra);
+    if (sec !== null) c.push(sec * 1_000);
+    else if (!Number.isNaN(Date.parse(ra))) c.push(Date.parse(ra) - nowMs);
+  }
+  for (const k of ['x-ratelimit-reset-requests', 'x-ratelimit-reset-tokens']) {
+    const d = headers[k] !== undefined ? parseDurationMs(headers[k]) : null;
+    if (d !== null) c.push(d);
+  }
+  for (const k of ['anthropic-ratelimit-requests-reset', 'anthropic-ratelimit-tokens-reset', 'anthropic-ratelimit-input-tokens-reset', 'anthropic-ratelimit-output-tokens-reset']) {
+    if (headers[k] !== undefined && !Number.isNaN(Date.parse(headers[k]))) c.push(Date.parse(headers[k]) - nowMs);
+  }
+  const m = /try again in ((?:\d+(?:\.\d+)?(?:h|ms|m|s))+)/i.exec(message);
+  if (m) {
+    const d = parseDurationMs(m[1]);
+    if (d !== null) c.push(d);
+  }
+  const valid = c.filter((x) => Number.isFinite(x) && x > 0);
+  return valid.length ? Math.ceil(Math.max(...valid)) : null;
 }
 
 export class OpenAIAdapter implements AIAdapter {

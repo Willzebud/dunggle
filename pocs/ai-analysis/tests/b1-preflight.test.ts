@@ -15,7 +15,7 @@ import { BudgetGuard } from '../src/budget/guard.js';
 import { MemoryBudgetStore } from '../src/budget/store.js';
 import { DEFAULT_LIMITS } from '../src/config/budget.js';
 import { MODELS } from '../src/config/models.js';
-import { PROVIDER_MIN_INTERVAL_MS } from '../src/config/quotas.js';
+import { PROVIDER_MIN_GAP_AFTER_END_MS } from '../src/config/quotas.js';
 import { resolveInput } from '../src/content-policy.js';
 import { buildPrompt } from '../src/prompt.js';
 import { parseArgs } from '../src/runner/args.js';
@@ -153,7 +153,7 @@ test('OpenAI 1 requête/minute : B.1 n’attend pas (une requête par fournisseu
   assert.equal(sent.filter((s) => s.provider === 'openai').length, 1);
 });
 
-test('OpenAI 1 requête/minute : en B.2, deux requêtes OpenAI sont espacées d’au moins 61 s', async () => {
+test('OpenAI 1 requête/minute : en B.2, chaque requête OpenAI part au moins 75 s après la FIN de la précédente', async () => {
   const guard = new BudgetGuard(new MemoryBudgetStore());
   const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.5', '--max-calls=3']);
   const { deps, sent } = clockDeps(guard, ACT_B2, ok);
@@ -161,7 +161,8 @@ test('OpenAI 1 requête/minute : en B.2, deux requêtes OpenAI sont espacées d�
   assert.equal(r.records.length, 6);
   const oai = sent.filter((s) => s.provider === 'openai').map((s) => s.at);
   assert.equal(oai.length, 3);
-  for (let i = 1; i < oai.length; i++) assert.ok(oai[i] - oai[i - 1] >= PROVIDER_MIN_INTERVAL_MS.openai, `écart ${oai[i] - oai[i - 1]} ms`);
+  // Chaque requête simulée dure 2 s : fin = début + 2 000 ms.
+  for (let i = 1; i < oai.length; i++) assert.ok(oai[i] - (oai[i - 1] + 2_000) >= PROVIDER_MIN_GAP_AFTER_END_MS.openai, `écart après la fin ${oai[i] - oai[i - 1] - 2_000} ms`);
 });
 
 test('Aucune relance automatique : SDK sans retry, 429 compté et exécution arrêtée après une seule tentative', async () => {

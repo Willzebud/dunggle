@@ -18,7 +18,8 @@ import { AnthropicAdapter, OpenAIAdapter } from '../adapters/real.js';
 import { consumeGrant, grantMismatch, peekGrant, type RealCallActivation } from '../security/activation.js';
 import { ArgsError, parseArgs } from '../runner/args.js';
 import { planRun } from '../runner/plan.js';
-import { CALL_LATENCY_ASSUMPTIONS_MS, estimateRunDurationMs, executeRun, realRunBlockers } from '../runner/run.js';
+import { CALL_LATENCY_ASSUMPTIONS_MS, estimateRunDurationMs, executeRun, pacingOffsets, realRunBlockers } from '../runner/run.js';
+import { FilePacingStore, ProviderPacer } from '../runner/pacing.js';
 import { smokeChecks, type SmokeGroundTruth } from '../runner/smoke-checks.js';
 import { redactSecrets } from '../security/redact.js';
 import type { PublicationInput } from '../types.js';
@@ -79,11 +80,18 @@ for (const s of plan.skipped.slice(0, 10)) console.log(`  · écarté ${s.key} :
 const phaseUsed = ledger?.quotas?.phases?.[plan.phase];
 const phaseExceptions = PHASE_QUOTA_EXCEPTIONS.filter((e) => e.phase === plan.phase);
 console.log(`Quotas de la phase ${plan.phase} (cumulatifs) : ${phaseUsed?.total ?? 0}/${phaseTotalMax(plan.phase)} appels utilisés ; par modèle : ${args.models.map((m) => `${m} ${phaseUsed?.perModel?.[m] ?? 0}/${phaseModelMax(plan.phase, m)}`).join(', ')}`);
-for (const e of phaseExceptions) console.log(`  Exception de quota : +${e.extraCalls} tentative pour ${e.modelKey} (incident ${e.incident.requestId}, HTTP ${e.incident.httpStatus}, non facturé) — ${e.approval}`);
+for (const e of phaseExceptions) {
+  const used = ledger?.quotas?.exceptionsUsed?.[e.id];
+  console.log(`  Exception de quota ${e.id} : +${e.extraCalls} tentative pour ${e.modelKey}${e.publicationId ? `, réservée à ${e.publicationId}` : ''} (incident HTTP ${e.incident.httpStatus}, ${e.incident.requestId ?? `exécution ${e.incident.runId}`}, non facturé) — ${used ? `CONSOMMÉE le ${used.at}` : 'disponible'}`);
+}
 console.log(`COÛT MAXIMAL DU PLAN : ${plan.totalMaxEur.toFixed(6)} € (budget d’essai : ${DEFAULT_LIMITS.trialTotalCapEur} €, déjà dépensé : ${(ledger?.trial.spentEur ?? 0).toFixed(6)} €)`);
 
+// Temporisation persistante (lecture seule en simulation) : 75 s après la fin de la dernière requête OpenAI, Retry-After.
+const pacer = new ProviderPacer(new FilePacingStore(`${VAR_DIR}provider-pacing.json`));
+const offsets = await pacingOffsets(pacer, Date.now());
 const minutes = (ms: number) => `${Math.round(ms / 60_000)} min`;
-console.log(`DURÉE ESTIMÉE : ${minutes(estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.typical))} (typique), ${minutes(estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.worst))} (pire cas : chaque appel au délai maximal)`);
+console.log(`Temporisation : OpenAI ≥ 75 s après la fin de la requête précédente (+ Retry-After) ; attente avant la première requête : OpenAI ${Math.ceil((offsets.openai ?? 0) / 1000)} s, Anthropic ${Math.ceil((offsets.anthropic ?? 0) / 1000)} s`);
+console.log(`DURÉE ESTIMÉE : ${minutes(estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.typical, offsets))} (typique, ${CALL_LATENCY_ASSUMPTIONS_MS.typical / 1000} s par appel), ${minutes(estimateRunDurationMs(plan, CALL_LATENCY_ASSUMPTIONS_MS.worst, offsets))} (pire cas : chaque appel au délai maximal)`);
 
 const blockers = await realRunBlockers(args, plan, baseDeps);
 const grantProblem = grantMismatch(await peekGrant(VAR_DIR), { phase: plan.phase, models: args.models, maxEur: args.confirmMaxEur ?? plan.totalMaxEur });
@@ -108,7 +116,7 @@ process.on('SIGINT', () => {
   stopRequested = true;
   console.error('\nInterruption demandée : fin de l’appel en cours, puis arrêt (Ctrl+C une seconde fois : arrêt immédiat, réservation à réconcilier).');
 });
-const report = await executeRun(args, plan, { ...baseDeps, activation, shouldStop: () => stopRequested });
+const report = await executeRun(args, plan, { ...baseDeps, activation, pacer, shouldStop: () => stopRequested });
 activation = null;
 if (!report.executed) {
   console.error('\nExécution réelle REFUSÉE (aucune réservation, aucun appel) :');
@@ -117,7 +125,7 @@ if (!report.executed) {
 }
 await mkdir(`${VAR_DIR}runs/`, { recursive: true });
 const runFile = `${VAR_DIR}runs/${new Date().toISOString().replace(/[:.]/g, '-')}-${args.mode}.json`;
-await writeFile(runFile, redactSecrets(JSON.stringify({ args, phase: plan.phase, promptVersion: PROMPT_VERSION, quotaExceptions: phaseExceptions, plan: { ...plan, calls: plan.calls.map((c) => ({ modelKey: c.modelKey, publicationId: c.publication.id, maxCostEur: c.maxCostEur })) }, report }, null, 2)));
+await writeFile(runFile, redactSecrets(JSON.stringify({ args, phase: plan.phase, promptVersion: PROMPT_VERSION, quotaExceptions: phaseExceptions, pacing: await pacer.store.load(), plan: { ...plan, calls: plan.calls.map((c) => ({ modelKey: c.modelKey, publicationId: c.publication.id, maxCostEur: c.maxCostEur })) }, report }, null, 2)));
 if (args.mode === 'smoke') {
   const gt = (JSON.parse(await readFile(new URL('../../fixtures/ground-truth.json', import.meta.url), 'utf8')) as { items: (SmokeGroundTruth & { id: string })[] }).items;
   for (const rec of report.records) {

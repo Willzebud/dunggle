@@ -5,7 +5,7 @@ import { DEFAULT_LIMITS, type BudgetLimits } from '../config/budget.js';
 import { MODELS, type ModelConfig, type PriceTier } from '../config/models.js';
 import type { AnalysisEntry, BudgetStore, LedgerState, Reservation, UncertainEntry } from './store.js';
 import { redactDeep, redactSecrets } from '../security/redact.js';
-import { POC_PHASES, PRODUCTION_QUOTAS, phaseModelMax, phaseTotalMax, type ProductionQuotas, type QuotaContext } from '../config/quotas.js';
+import { POC_PHASES, PRODUCTION_QUOTAS, boundExceptionFor, consumedBoundExceptions, phaseModelBaseMax, phaseModelMax, phaseTotalBaseMax, phaseTotalMax, type ProductionQuotas, type QuotaContext } from '../config/quotas.js';
 import { parisDay, parisMonth } from '../quota/time.js';
 
 export type RefusalCode =
@@ -168,7 +168,7 @@ export class BudgetGuard {
           throw new BudgetRefusedError('duplicate-analysis', `Analyse déjà ${s.analyses[req.idempotencyKey].status} : ${req.idempotencyKey}`);
         }
         // Quotas d'appels (vérifiés avec le budget, comptés seulement si la réservation est acceptée).
-        const commitQuota = req.quota ? this.checkQuota(s, req.quota, req.modelKey) : null;
+        const commitQuota = req.quota ? this.checkQuota(s, req.quota, req.modelKey, req.idempotencyKey) : null;
         const m = (s.months[month] ??= { spentEur: 0, reservedEur: 0, uncertainEur: 0 });
         const dd = (s.days[day] ??= { analyses: 0 });
         if (dd.analyses >= L.dailyMaxAnalyses) throw new BudgetRefusedError('daily-limit', `Quota quotidien atteint (${L.dailyMaxAnalyses} analyses)`);
@@ -181,7 +181,7 @@ export class BudgetGuard {
         }
         const r: Reservation = { id: randomUUID(), modelKey: req.modelKey, scope, estimatedMaxEur: est, inputTokensEstimate: req.inputTokensEstimate, maxOutputTokens: maxOut, month, day, createdAt: at, idempotencyKey: req.idempotencyKey };
         if (req.idempotencyKey) s.analyses[req.idempotencyKey] = { status: 'in-progress', reservationId: r.id, modelKey: req.modelKey, since: at };
-        if (commitQuota) r.quota = commitQuota();
+        if (commitQuota) r.quota = commitQuota(r.id);
         s.sequence = (s.sequence ?? 0) + 1;
         m.reservedEur = round6(m.reservedEur + est);
         if (scope === 'trial') s.trial.reservedEur = round6(s.trial.reservedEur + est);
@@ -201,12 +201,13 @@ export class BudgetGuard {
    * Vérifie les quotas et renvoie une fonction qui les incrémente (appelée seulement si la réservation est acceptée).
    * Production (`operational`) : jour et mois Europe/Paris, exécution. POC (`trial`) : compteurs cumulatifs de la phase.
    */
-  private checkQuota(s: LedgerState, q: QuotaContext, modelKey: string): () => NonNullable<Reservation['quota']> {
+  private checkQuota(s: LedgerState, q: QuotaContext, modelKey: string, idempotencyKey?: string): (reservationId: string) => NonNullable<Reservation['quota']> {
     const now = this.now();
     const dailyKey = `${q.scope}|${parisDay(now)}`;
     const monthlyKey = `${q.scope}|${parisMonth(now)}`;
     const Q = s.quotas;
     const run = Q.runs[q.runId] ?? 0;
+    let exceptionId: string | undefined;
     if (q.scope === 'operational') {
       const P = this.productionQuotas;
       if ((Q.daily[dailyKey] ?? 0) >= P.dailyMax) throw new BudgetRefusedError('quota-daily', `Quota quotidien atteint (${P.dailyMax} appels, jour Europe/Paris ${dailyKey.split('|')[1]})`);
@@ -218,11 +219,27 @@ export class BudgetGuard {
       // Plafonds cumulatifs = base + exceptions versionnées ; le plafond par exécution reste celui de base.
       const totalMax = phaseTotalMax(q.phase);
       const modelMax = phaseModelMax(q.phase, modelKey);
+      const used = Q.exceptionsUsed ?? {};
+      // Clé d'idempotence `modèle|publication|version du prompt` → publication visée.
+      const publicationId = idempotencyKey?.split('|').slice(1, -1).join('|') ?? '';
+      const exc = publicationId ? boundExceptionFor(q.phase, modelKey, publicationId, used, Q.runs, q.runId) : null;
       if (ph.total >= totalMax) throw new BudgetRefusedError('quota-phase-total', `Quota de la phase ${q.phase} atteint (${totalMax} appels au total)`);
       if ((ph.perModel[modelKey] ?? 0) >= modelMax) throw new BudgetRefusedError('quota-phase-model', `Quota de la phase ${q.phase} atteint pour ${modelKey} (${modelMax})`);
+      if (exc) {
+        // Tentative imputée à l'exception liée (une seule fois, pour cette seule publication).
+        exceptionId = exc.id;
+      } else {
+        // Appels ordinaires : plafond de base, hors tentatives imputées aux exceptions liées.
+        const ordinaryModel = (ph.perModel[modelKey] ?? 0) - consumedBoundExceptions(q.phase, used, modelKey);
+        const ordinaryTotal = ph.total - consumedBoundExceptions(q.phase, used);
+        const baseModel = phaseModelBaseMax(q.phase, modelKey);
+        const baseTotal = phaseTotalBaseMax(q.phase);
+        if (ordinaryTotal >= baseTotal) throw new BudgetRefusedError('quota-phase-total', `Quota de la phase ${q.phase} atteint (${baseTotal} appels ordinaires ; exceptions réservées à leur publication)`);
+        if (ordinaryModel >= baseModel) throw new BudgetRefusedError('quota-phase-model', `Quota de la phase ${q.phase} atteint pour ${modelKey} (${baseModel} appels ordinaires ; exception réservée à sa publication)`);
+      }
       if (run >= P.totalMax) throw new BudgetRefusedError('quota-run', `Quota de l’exécution atteint (${P.totalMax} appels)`);
     }
-    return () => {
+    return (reservationId: string) => {
       Q.daily[dailyKey] = (Q.daily[dailyKey] ?? 0) + 1;
       Q.monthly[monthlyKey] = (Q.monthly[monthlyKey] ?? 0) + 1;
       Q.runs[q.runId] = run + 1;
@@ -230,8 +247,9 @@ export class BudgetGuard {
         const ph = (Q.phases[q.phase] ??= { total: 0, perModel: {} });
         ph.total += 1;
         ph.perModel[modelKey] = (ph.perModel[modelKey] ?? 0) + 1;
+        if (exceptionId) (Q.exceptionsUsed ??= {})[exceptionId] = { at: new Date(now).toISOString(), runId: q.runId, reservationId, idempotencyKey: idempotencyKey ?? '' };
       }
-      return { context: q, dailyKey, monthlyKey };
+      return { context: q, dailyKey, monthlyKey, ...(exceptionId ? { exceptionId } : {}) };
     };
   }
 
@@ -251,6 +269,8 @@ export class BudgetGuard {
         ph.total = Math.max(0, ph.total - 1);
         dec(ph.perModel, r.modelKey);
       }
+      // Requête jamais transmise : l'exception liée redevient disponible.
+      if (r.quota.exceptionId && Q.exceptionsUsed?.[r.quota.exceptionId]?.reservationId === r.id) delete Q.exceptionsUsed[r.quota.exceptionId];
     }
   }
 

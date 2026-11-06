@@ -42,6 +42,8 @@ export class ProviderError extends Error {
     readonly requestSent: boolean,
     readonly usage: ProviderUsage | null = null,
     transmitted?: boolean,
+    /** Délai d'attente indiqué par le fournisseur (Retry-After, réinitialisation de limite), en ms ; null si absent. */
+    readonly retryAfterMs: number | null = null,
   ) {
     super(message);
     this.name = 'ProviderError';
