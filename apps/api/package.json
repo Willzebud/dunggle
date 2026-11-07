@@ -1,0 +1,19 @@
+{
+  "name": "@dunggle/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dunggle — backend : collecte, déduplication, analyse IA (GPT-6 Luna) et stockage des publications",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "tsx --test \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
