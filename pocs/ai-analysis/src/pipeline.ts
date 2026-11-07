@@ -23,6 +23,9 @@ export function analysisKey(modelKey: string, publicationId: string): string {
   return `${modelKey}|${publicationId}|${PROMPT_VERSION}`;
 }
 
+/** Taille maximale d'une sortie rejetée conservée localement (diagnostic). */
+export const REJECTED_OUTPUT_MAX_CHARS = 8000;
+
 /** Statuts pour lesquels la publication n'a pas pu être analysée (elle reste conservée). */
 const UNANALYZED: AnalysisStatus[] = ['refused-budget', 'refused-quota', 'refused-unknown-pricing', 'provider-error', 'invalid-output'];
 
@@ -126,13 +129,19 @@ export async function analyzePublication(pub: PublicationInput, deps: PipelineDe
 
   // 5. Validation stricte de la sortie.
   const v = validateAnalysis(rawText);
-  if (!v.ok || !v.value) return finish(unanalyzed({ ...rec, status: 'invalid-output', error: v.errors.join(' ; ') }));
+  // Sortie rejetée conservée pour diagnostic (résultats locaux hors Git, jamais affichée) : aucune correction.
+  if (!v.ok || !v.value) return finish(unanalyzed({ ...rec, status: 'invalid-output', error: v.errors.join(' ; '), rejectedRawOutput: rawText.slice(0, REJECTED_OUTPUT_MAX_CHARS) }));
 
   // 6. Règles de contenu, placement, puis suppression des résumés inutiles.
   const content = enforceContentRules(pub, input, v.value);
   const placed = computeSection(pub, content.analysis, coverage);
   const final = dropSummaryIfExcluded(placed.section, placed.analysis);
-  return finish({ ...rec, analysis: final.analysis, section: placed.section, violations: [...content.violations, ...placed.violations, ...final.violations] });
+  const violations = [...content.violations, ...placed.violations, ...final.violations];
+  // Résumé supprimé par une règle : conservé localement pour audit (jamais affiché, jamais réinjecté).
+  const hadSummary = v.value.summary !== null || v.value.keyPoints.length > 0;
+  const lostSummary = hadSummary && final.analysis.summary === null && final.analysis.keyPoints.length === 0;
+  const dropped = lostSummary ? { droppedSummary: { summary: v.value.summary, keyPoints: v.value.keyPoints, reasons: violations } } : {};
+  return finish({ ...rec, analysis: final.analysis, section: placed.section, violations, ...dropped });
 }
 
 /** Applique les règles de contenu à la sortie du modèle (corrige et trace ; ne fait jamais confiance au modèle). */

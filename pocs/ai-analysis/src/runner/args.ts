@@ -2,7 +2,7 @@ import { CANDIDATE_MODEL_KEYS } from '../config/models.js';
 
 export interface RunArgs {
   models: string[];
-  mode: 'smoke' | 'full';
+  mode: 'smoke' | 'full' | 'final';
   /** Vrai par défaut : sans --real, aucun appel n'est possible. */
   dryRun: boolean;
   real: boolean;
@@ -42,7 +42,7 @@ export function parseArgs(argv: string[]): RunArgs {
         else throw new ArgsError(`Modèle non candidat : ${value} (autorisés : ${CANDIDATE_MODEL_KEYS.join(', ')}, all)`);
         break;
       case '--mode':
-        if (value !== 'smoke' && value !== 'full') throw new ArgsError('--mode doit valoir smoke ou full');
+        if (value !== 'smoke' && value !== 'full' && value !== 'final') throw new ArgsError('--mode doit valoir smoke, full ou final');
         out.mode = value;
         break;
       case '--dry-run':

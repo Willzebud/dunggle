@@ -34,7 +34,7 @@ export interface SummaryCheckInput {
   /** Texte effectivement transmis au modèle (null en mode métadonnées). */
   sourceText: string | null;
   title: string;
-  summaryExpected: boolean | 'if-kept';
+  summaryExpected: boolean | 'if-kept' | 'optional';
   kept: boolean;
   excerptLimited: boolean;
   referenceFacts?: string[];
@@ -61,7 +61,7 @@ export function containsClaim(text: string, claim: string): boolean {
 
 export function autoCheckSummary(i: SummaryCheckInput): AutoCheck[] {
   const text = [i.summary ?? '', ...i.keyPoints].join(' ').trim();
-  const expected = i.summaryExpected === true || (i.summaryExpected === 'if-kept' && i.kept);
+  const expected = i.summaryExpected === true || (i.summaryExpected === 'if-kept' && i.kept) || (i.summaryExpected === 'optional' && !!text);
   const checks: AutoCheck[] = [];
 
   // Respect du niveau de contenu : fiable.

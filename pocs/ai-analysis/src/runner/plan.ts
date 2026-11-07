@@ -12,7 +12,7 @@ import { POC_PHASES, phaseForMode, phaseModelMax, phaseTotalMax, type PocPhase }
 export const SMOKE_FIXTURE_ID = 'synthetic:orion-multimodal';
 
 /** Plafonds d'appels par modèle et par exécution, issus des quotas de phase du POC (non relevables par argument). */
-export const RUN_CALL_LIMITS = { smoke: POC_PHASES.B1.perModelMax, full: POC_PHASES.B2.perModelMax } as const;
+export const RUN_CALL_LIMITS = { smoke: POC_PHASES.B1.perModelMax, full: POC_PHASES.B2.perModelMax, final: POC_PHASES.B3.perModelMax } as const;
 
 export interface PlannedCall {
   modelKey: string;

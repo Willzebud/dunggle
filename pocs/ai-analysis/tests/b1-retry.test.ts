@@ -134,7 +134,7 @@ test('Exception B.1 : figée, B.1 uniquement, Haiku uniquement, +1 tentative ; r
   assert.equal(phaseModelMax('B2', HAIKU), 37);
   assert.equal(phaseModelMax('B2', LUNA), 38, 'B.2 : +1 Luna (exception liée)');
   assert.equal(phaseTotalMax('B2'), 75);
-  assert.deepEqual({ ...POC_PHASES.B1 }, { mode: 'smoke', perModelMax: 1, totalMax: 2, description: POC_PHASES.B1.description });
+  assert.deepEqual({ ...POC_PHASES.B1 }, { mode: 'smoke', perModelMax: 1, totalMax: 2, description: POC_PHASES.B1.description, active: true });
   assert.deepEqual({ ...PRODUCTION_QUOTAS }, { dailyMax: 20, monthlyMax: 500, perRunMax: 10 });
   assert.equal(DEFAULT_LIMITS.trialTotalCapEur, 0.5);
 });

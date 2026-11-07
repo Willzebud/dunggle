@@ -62,7 +62,10 @@ test('politiques : configuration valide, aucune politique permissive sans vérif
 });
 
 test('politiques : les 17 sources réelles sont en metadata-only (aucune autorisation vérifiée)', () => {
-  const real = CONTENT_POLICIES.filter((p) => !p.sourceId.startsWith('synthetic'));
+  // Sources synthétiques : préfixe « synthetic » (B.1/B.2) ou « b3-synthetic- » (test final), statut « sans objet ».
+  const isSynthetic = (id: string) => id.startsWith('synthetic') || id.startsWith('b3-synthetic-');
+  for (const p of CONTENT_POLICIES) assert.equal(p.termsStatus === 'sans objet (synthétique)', isSynthetic(p.sourceId), `${p.sourceId} : statut cohérent`);
+  const real = CONTENT_POLICIES.filter((p) => !isSynthetic(p.sourceId));
   assert.equal(real.length, 17);
   assert.ok(real.every((p) => p.policy === 'metadata-only'));
   for (const id of ['angular-blog', 'mit-tech-review', 'ieee-robotics']) {

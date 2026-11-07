@@ -31,7 +31,7 @@ npm run authorize:real -- --phase=B1 --models=anthropic-haiku-5-5,openai-gpt-6-l
 npm run evaluate:real -- --mode=smoke --real --confirm-max-eur=0.004   # réel : exige l’autorisation ci-dessus
 ```
 
-Options autorisées : `--model=<clé>|all`, `--mode=smoke|full`, `--dry-run`, `--real`, `--confirm-max-eur=<€ ≤ 0,50>`, `--max-calls=<n>` (abaisse seulement le plafond). Toute autre option est refusée. Un appel réel exige tous les verrous décrits dans `reports/phase-b1-readiness.md` § 3 (autorisation locale à usage unique, quotas, budget, clés, registre cohérent). Les analyses déjà terminées ou incertaines ne sont jamais refacturées lors d’une reprise.
+Options autorisées : `--model=<clé>|all`, `--mode=smoke|full|final`, `--dry-run`, `--real`, `--confirm-max-eur=<€ ≤ 0,50>`, `--max-calls=<n>` (abaisse seulement le plafond). Toute autre option est refusée. Un appel réel exige tous les verrous décrits dans `reports/phase-b1-readiness.md` § 3 (autorisation locale à usage unique, quotas, budget, clés, registre cohérent). Les analyses déjà terminées ou incertaines ne sont jamais refacturées lors d’une reprise.
 
 ## Garanties de la phase A
 
@@ -105,6 +105,7 @@ La comptabilité interne reste une estimation : il faut aussi configurer des pla
 - `reports/content-policy.md` : politiques par source et restrictions non résolues.
 - `reports/evaluation-readiness.md` : jeu d’évaluation, modes envoyés, coûts maximaux, mesure du préfiltre (généré).
 - `reports/budget-scenarios.md` : scénarios budgétaires exécutés et projections (généré).
+- `reports/phase-b3-final-test.md` : audit hors ligne de B.2 et préparation du test final B3 (jeu figé `fixtures/b3/`, règle de décision, phase B3 **inactive**). Comparaison : `npm run compare` (B.2) ou `npm run compare -- --phase=B3`.
 - `reports/phase-b-security-audit.md` : audit de sécurité des dépenses (phase B.0), protections fournisseurs, prérequis et plan des smoke tests.
 - `reports/budget-audit.md` : audit de la protection budgétaire, limites et protections à configurer chez les fournisseurs.
 - `reports/evaluation-dataset-quality.md` : composition et cohérence du jeu d’évaluation (généré).

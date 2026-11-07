@@ -59,6 +59,14 @@ export const CONTENT_POLICIES: PolicyEntry[] = [
   { sourceId: 'synthetic-fixtures', policy: 'full-allowed', termsStatus: 'sans objet (synthétique)', technicalSignals: [],
     verification: { verifiedBy: 'POC 2 Phase A', verifiedAt: '2026-11-06', evidence: 'Textes rédigés pour le POC (fixtures/evaluation-set.json, synthetic: true) ; aucun contenu tiers.' },
     rationale: 'Contenus synthétiques rédigés pour tester les résumés FULL et PARTIAL.' },
+  // Test final B3 : contenus rédigés pour le POC, SANS mention de fiction dans le texte transmis (la provenance
+  // est conservée dans les champs internes `synthetic` / `provenance`, jamais envoyés aux modèles).
+  { sourceId: 'b3-synthetic-full', policy: 'full-allowed', termsStatus: 'sans objet (synthétique)', technicalSignals: [],
+    verification: { verifiedBy: 'POC 2 préparation B3', verifiedAt: '2026-11-07', evidence: 'Textes rédigés pour le POC (fixtures/b3/publications.json, synthetic: true) ; organisations et produits inventés ; aucun contenu tiers.' },
+    rationale: 'Contenus synthétiques B3 : résumés en texte intégral, exclusion promotionnelle, informations insuffisantes.' },
+  { sourceId: 'b3-synthetic-excerpt', policy: 'excerpt-only', termsStatus: 'sans objet (synthétique)', technicalSignals: [],
+    verification: { verifiedBy: 'POC 2 préparation B3', verifiedAt: '2026-11-07', evidence: 'Textes rédigés pour le POC (fixtures/b3/publications.json, synthetic: true) ; aucun contenu tiers.' },
+    rationale: 'Contenus synthétiques B3 : simule une source dont seule la reprise d’un extrait est autorisée.' },
   { sourceId: 'synthetic-blocked', policy: 'blocked', termsStatus: 'sans objet (synthétique)', technicalSignals: [],
     rationale: 'Source fictive servant à vérifier qu’aucun appel externe n’est fait pour une source bloquée.' },
 ];

@@ -16,13 +16,19 @@ export interface ProductionQuotas {
 /** Production future : périmètre `operational` (budget 8 € opérationnel, 10 € absolu). */
 export const PRODUCTION_QUOTAS: Readonly<ProductionQuotas> = Object.freeze({ dailyMax: 20, monthlyMax: 500, perRunMax: 10 });
 
-export type PocPhase = 'B1' | 'B2';
+export type PocPhase = 'B1' | 'B2' | 'B3';
 
 export interface PocPhaseQuotas {
-  mode: 'smoke' | 'full';
+  mode: 'smoke' | 'full' | 'final';
   perModelMax: number;
   totalMax: number;
   description: string;
+  /**
+   * Phase ouverte aux réservations réelles. Une phase inactive est refusée par le garde budgétaire
+   * (`quota-phase-inactive`) et par la création d'autorisation locale, AVANT toute réservation.
+   * Son activation passe par un commit relu, après autorisation explicite de l'utilisateur.
+   */
+  active: boolean;
 }
 
 /**
@@ -31,8 +37,12 @@ export interface PocPhaseQuotas {
  * Chaque phase exige sa propre autorisation locale à usage unique.
  */
 export const POC_PHASES: Readonly<Record<PocPhase, Readonly<PocPhaseQuotas>>> = Object.freeze({
-  B1: Object.freeze({ mode: 'smoke', perModelMax: 1, totalMax: 2, description: 'Smoke tests : un appel par modèle' }),
-  B2: Object.freeze({ mode: 'full', perModelMax: 37, totalMax: 74, description: 'Évaluation complète : jusqu’à 37 publications par modèle' }),
+  B1: Object.freeze({ mode: 'smoke', perModelMax: 1, totalMax: 2, description: 'Smoke tests : un appel par modèle', active: true }),
+  B2: Object.freeze({ mode: 'full', perModelMax: 37, totalMax: 74, description: 'Évaluation complète : jusqu’à 37 publications par modèle', active: true }),
+  // Test final discriminant (préparé le 2026-11-07, reports/phase-b3-final-test.md) : 15 publications figées
+  // (fixtures/b3/, empreinte B3_FREEZE_SHA256) × 2 modèles. INACTIF : aucune réservation possible tant que
+  // l'utilisateur ne l'a pas explicitement autorisé et qu'un commit relu n'a pas basculé `active`.
+  B3: Object.freeze({ mode: 'final', perModelMax: 15, totalMax: 30, description: 'Test final discriminant : 15 publications figées par modèle', active: false }),
 });
 
 /**
@@ -127,7 +137,10 @@ export function phaseTotalMax(phase: PocPhase): number {
   return POC_PHASES[phase].totalMax + PHASE_QUOTA_EXCEPTIONS.filter((e) => e.phase === phase).reduce((s, e) => s + e.extraCalls, 0);
 }
 
-export const phaseForMode = (mode: 'smoke' | 'full'): PocPhase => (mode === 'smoke' ? 'B1' : 'B2');
+export const phaseForMode = (mode: 'smoke' | 'full' | 'final'): PocPhase => (mode === 'smoke' ? 'B1' : mode === 'full' ? 'B2' : 'B3');
+
+/** Version du prompt utilisée par B.2 (résultats historiques, comparaison reproductible hors ligne). */
+export const B2_PROMPT_VERSION = '96c4c96347de';
 
 /** Contexte de quota attaché à chaque réservation. Obligatoire pour tout appel réel. */
 export type QuotaContext = { scope: 'operational'; runId: string } | { scope: 'trial'; phase: PocPhase; runId: string };

@@ -1,0 +1,69 @@
+{
+  "description": "Règle de décision FIGÉE du test final B3, définie le 2026-11-07 AVANT tout appel réel. Appliquée à l'identique aux deux modèles par src/evaluation/decision.ts. Toute modification invalide l'empreinte B3_FREEZE_SHA256.",
+  "version": 1,
+  "frozenAt": "2026-11-07",
+  "weights": {
+    "importantCoverage": 30,
+    "factualAccuracy": 25,
+    "summaryQuality": 20,
+    "structuredReliability": 10,
+    "classification": 10,
+    "costLatency": 5
+  },
+  "importantCoverage": {
+    "visibleInBand": 1,
+    "visibleBelowBand": 0.5,
+    "visibleAboveBand": 1,
+    "excludedOrNotAnalyzed": 0
+  },
+  "structuredReliability": {
+    "penaltyFactor": 3,
+    "droppedSummaryWeight": 0.5,
+    "droppingViolations": [
+      "summary-longer-than-excerpt",
+      "ungrounded-number",
+      "ungrounded-url",
+      "possible-system-prompt-leak",
+      "summary-forbidden"
+    ]
+  },
+  "classification": {
+    "exclusionDecisions": 0.4,
+    "typesAcceptable": 0.2,
+    "themesExact": 0.2,
+    "noveltyInRange": 0.1,
+    "sectionsCorrect": 0.1
+  },
+  "costLatency": {
+    "cost": 3,
+    "latency": 2
+  },
+  "eliminatory": {
+    "importantExcludedMin": 2,
+    "humanConfirmedInventionsMin": 1,
+    "invalidOutputsMin": 2,
+    "projectedMonthlyEurAtProductionQuotaMax": 8
+  },
+  "protocolArtifact": {
+    "pattern": "\\b(fictifs?|fictives?|synth[ée]tiques?|synthetic|fixtures?|fictional|fictitious|hypoth[ée]tiques?|hypothetical|pas r[ée]elles?|not real|example\\.|\\.example)\\b",
+    "scope": "relevanceReason, summary et keyPoints des publications synthétiques",
+    "effect": "publication neutralisée pour LES DEUX modèles dans les critères 1, 2, 3 et dans la composante « décisions d'exclusion » du critère 5",
+    "maxNeutralizedItems": 2
+  },
+  "closeMarginPoints": 5,
+  "tieBreakOrder": [
+    "importantCoverage",
+    "factualAccuracy",
+    "structuredReliability",
+    "summaryQuality",
+    "classification"
+  ],
+  "tieBreakMinDifferenceShare": 0.1,
+  "humanReview": "OBLIGATOIRE avant toute décision : grille à l'aveugle complète et validée (var/review/b3-summary-review.blind.json), relecteur renseigné. Tant qu'elle ne l'est pas, les indicateurs par modèle restent scellés, la correspondance A/B n'est pas lue et aucune décision (même provisoire) n'est rendue. Les notes sont saisies par l'utilisateur, jamais par l'assistant.",
+  "inventionEvidence": {
+    "definition": "Invention matérielle : fait, chiffre, nom, date, version, capacité, disponibilité ou prix affirmé par le candidat, ABSENT du texte source ou CONTREDIT par lui.",
+    "notInventions": "Reformulation ou traduction fidèle, omission (informations essentielles), approximation sans conséquence ou nuance (exactitude 1), extrapolation légère signalée (absence d'invention 1).",
+    "required": "Pour compter dans le seuil éliminatoire, chaque invention est documentée dans la grille : passage EXACT du candidat (vérifié par le programme), sourceCheck « absent » ou « contradicted » (un passage présent tel quel dans la source est refusé), justification d'au moins 20 caractères. Note 0 sans invention documentée, ou invention documentée sans note 0 : grille refusée.",
+    "minJustificationChars": 20
+  }
+}

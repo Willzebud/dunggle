@@ -24,7 +24,8 @@ export type RefusalCode =
   | 'quota-monthly'
   | 'quota-run'
   | 'quota-phase-total'
-  | 'quota-phase-model';
+  | 'quota-phase-model'
+  | 'quota-phase-inactive';
 
 export class BudgetRefusedError extends Error {
   constructor(
@@ -215,6 +216,7 @@ export class BudgetGuard {
       if (run >= P.perRunMax) throw new BudgetRefusedError('quota-run', `Quota de l’exécution atteint (${P.perRunMax} appels)`);
     } else {
       const P = POC_PHASES[q.phase];
+      if (!P?.active) throw new BudgetRefusedError('quota-phase-inactive', `Phase ${q.phase} inactive : aucune réservation possible avant son activation explicite`);
       const ph = Q.phases[q.phase] ?? { total: 0, perModel: {} };
       // Plafonds cumulatifs = base + exceptions versionnées ; le plafond par exécution reste celui de base.
       const totalMax = phaseTotalMax(q.phase);

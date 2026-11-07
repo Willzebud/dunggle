@@ -84,4 +84,11 @@ export interface AnalysisRecord {
   usage?: { billable: { inputTokens: number; outputTokens: number; reasoningTokens?: number } | null; raw: Record<string, unknown> | null };
   stopReason?: string | null;
   error?: string;
+  /**
+   * DIAGNOSTIC LOCAL UNIQUEMENT (var/, hors Git ; jamais affiché ni réinjecté) :
+   * - texte brut d'une sortie rejetée par la validation (invalid-output), sans aucune correction ;
+   * - résumé et points clés supprimés par une règle de contenu ou d'exclusion, avec les motifs.
+   */
+  rejectedRawOutput?: string;
+  droppedSummary?: { summary: string | null; keyPoints: string[]; reasons: string[] };
 }

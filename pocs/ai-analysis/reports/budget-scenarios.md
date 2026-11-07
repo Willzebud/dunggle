@@ -1,6 +1,6 @@
 # POC 2 — Phase A : tests et scénarios budgétaires
 
-> Généré par `npm run budget:scenarios` le 2026-11-06. Aucun appel réel ; modèle fictif `mock-cheap` (1 $ / 5 $ par M de tokens) pour exercer les plafonds.
+> Généré par `npm run budget:scenarios` le 2026-11-07. Aucun appel réel ; modèle fictif `mock-cheap` (1 $ / 5 $ par M de tokens) pour exercer les plafonds.
 
 ## Paramètres appliqués
 

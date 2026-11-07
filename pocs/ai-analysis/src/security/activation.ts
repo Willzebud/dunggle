@@ -21,7 +21,7 @@ export const GRANT_TTL_MS = 15 * 60_000;
  * L'exécution est refusée avant tout appel si la durée typique, marge de 25 % comprise, dépasse la validité.
  * Une activation expirée en cours d'exécution fait refuser les appels suivants AVANT envoi (sûr, mais incomplet).
  */
-export const ACTIVATION_TTL_MS_BY_PHASE: Readonly<Record<PocPhase, number>> = Object.freeze({ B1: 30 * 60_000, B2: 90 * 60_000 });
+export const ACTIVATION_TTL_MS_BY_PHASE: Readonly<Record<PocPhase, number>> = Object.freeze({ B1: 30 * 60_000, B2: 90 * 60_000, B3: 45 * 60_000 });
 /** Plafond absolu, toutes phases confondues. */
 export const ACTIVATION_TTL_MAX_MS = 90 * 60_000;
 /** @deprecated conservé pour compatibilité : durée B.1. */
@@ -84,6 +84,7 @@ export async function createGrant(
   now = new Date(),
 ): Promise<RealCallGrant> {
   if (!(p.phase in POC_PHASES)) throw new ActivationError(`Phase inconnue : ${p.phase}`);
+  if (!POC_PHASES[p.phase].active) throw new ActivationError(`Phase ${p.phase} inactive : aucune autorisation ne peut être créée avant son activation explicite`);
   if (!p.models.length || p.models.some((m) => !CANDIDATE_MODEL_KEYS.includes(m))) throw new ActivationError('Modèles non candidats');
   if (!(p.maxEur > 0 && p.maxEur <= 0.5)) throw new ActivationError('Montant maximal hors bornes (> 0 et ≤ 0,50 €)');
   if (p.confirm !== confirmationPhrase(p.phase, p.maxEur)) throw new ActivationError(`Confirmation incorrecte : tapez exactement « ${confirmationPhrase(p.phase, p.maxEur)} »`);

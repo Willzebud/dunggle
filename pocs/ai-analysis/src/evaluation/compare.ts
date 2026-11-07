@@ -20,10 +20,15 @@ export interface GroundTruthItem {
   acceptableExtraThemes: string[];
   types: string[];
   relevance: 'high' | 'medium' | 'low';
+  /** Bandes acceptées (B3) ; à défaut, la seule bande `relevance`. */
+  relevanceBands?: ('high' | 'medium' | 'low')[];
+  /** Actualité à ne pas manquer (B3, critère prioritaire n° 1). */
+  important?: boolean;
   novelty: [number, number];
   sections: string[];
   summaryAllowed: boolean;
-  summaryExpected: boolean | 'if-kept';
+  /** 'optional' (B3) : un résumé est permis mais pas exigé ; s'il existe, il est contrôlé. */
+  summaryExpected: boolean | 'if-kept' | 'optional';
   referenceFacts?: string[];
   forbiddenClaims?: string[];
 }
@@ -75,6 +80,12 @@ const quantile = (xs: number[], q: number) => {
   return s[Math.min(s.length - 1, Math.ceil(q * s.length) - 1)];
 };
 const dist = (v: number, [lo, hi]: readonly [number, number]) => (v < lo ? lo - v : v > hi ? v - hi : 0);
+
+/** Distance à la bande de pertinence acceptée la plus proche (0 = dans une bande acceptée). */
+export function relevanceDistance(v: number, g: Pick<GroundTruthItem, 'relevance' | 'relevanceBands'>): number {
+  const bands = g.relevanceBands?.length ? g.relevanceBands : [g.relevance];
+  return Math.min(...bands.map((b) => dist(v, RELEVANCE_BANDS[b])));
+}
 
 const isKept = (r: AnalysisRecord) => r.status === 'analyzed' && r.analysis !== null && r.analysis.exclusionReason === null;
 const isExcluded = (r: AnalysisRecord) => r.status === 'analyzed' && r.analysis !== null && r.analysis.exclusionReason !== null;
@@ -158,9 +169,9 @@ export function computeModelMetrics(
         types.confusion[k] = (types.confusion[k] ?? 0) + 1;
       }
       relevance.evaluated++;
-      const band = RELEVANCE_BANDS[g.relevance];
-      if (dist(a.relevance, band) === 0) relevance.inBand++;
-      relevance.d.push(dist(a.relevance, band));
+      const d = relevanceDistance(a.relevance, g);
+      if (d === 0) relevance.inBand++;
+      relevance.d.push(d);
       novelty.evaluated++;
       if (dist(a.novelty, g.novelty) === 0) novelty.inRange++;
       novelty.d.push(dist(a.novelty, g.novelty));
@@ -168,7 +179,7 @@ export function computeModelMetrics(
 
     // Résumés : respect du droit au résumé (fiable) et contrôles indicatifs quand un résumé est attendu.
     if (a?.summary && !g.summaryAllowed) summaries.forbiddenWhenNotAllowed++;
-    const expected = g.summaryExpected === true || (g.summaryExpected === 'if-kept' && kept);
+    const expected = g.summaryExpected === true || (g.summaryExpected === 'if-kept' && kept) || (g.summaryExpected === 'optional' && !!a?.summary);
     if (expected) {
       summaries.expected++;
       if (a?.summary) summaries.produced++;
@@ -235,7 +246,19 @@ export function latestRecords(runs: { records: AnalysisRecord[] }[]): Map<string
  * Grille de revue humaine À L'AVEUGLE : pour chaque publication résumée par au moins un modèle, les résumés
  * sont présentés sous des étiquettes A/B tirées au hasard ; la correspondance est fournie séparément.
  */
-export function blindReviewGrid(byModel: Map<string, AnalysisRecord[]>, gt: GroundTruthItem[], pubs: PublicationInput[], rand: () => number = Math.random) {
+/**
+ * Consignes de la revue humaine (identiques pour tous les candidats). La distinction invention / omission /
+ * reformulation conditionne le seul critère éliminatoire fondé sur les résumés.
+ */
+export const REVIEW_INSTRUCTIONS = [
+  'Noter chaque candidat de 0 à 2 sur les 6 critères, en lisant d’abord le texte source (sourceText). Ne pas ouvrir le fichier de correspondance avant d’avoir terminé et renseigné « reviewer ».',
+  'INVENTION MATÉRIELLE (note 0 en no_invented_claims, éliminatoire) : un fait, chiffre, nom, date, version, capacité, disponibilité ou prix affirmé par le candidat qui est ABSENT du texte source ou CONTREDIT par lui.',
+  'Chaque invention doit être documentée dans « inventions » : { "claim": passage EXACT copié du résumé ou des points clés, "sourceCheck": "absent" ou "contradicted", "justification": explication en référence au texte source (20 caractères au moins) }. Sans documentation, la grille est refusée.',
+  'NE SONT PAS des inventions : une reformulation ou une traduction fidèle (même avec d’autres mots) ; une omission (→ essential_information) ; une approximation sans conséquence ou un changement de nuance (→ factual_accuracy 1) ; une extrapolation légère et signalée (→ no_invented_claims 1).',
+  'En cas de doute entre reformulation et invention, relire le passage source correspondant ; s’il le dit en substance, ce n’est pas une invention.',
+];
+
+export function blindReviewGrid(byModel: Map<string, AnalysisRecord[]>, gt: GroundTruthItem[], pubs: PublicationInput[], rand: () => number = Math.random, phaseLabel = 'B.2') {
   const models = [...byModel.keys()];
   const items: unknown[] = [];
   const key: Record<string, Record<string, string>> = {};
@@ -259,6 +282,7 @@ export function blindReviewGrid(byModel: Map<string, AnalysisRecord[]>, gt: Grou
           summary: x.r!.analysis!.summary,
           keyPoints: x.r!.analysis!.keyPoints,
           scores: { factual_accuracy: null, essential_information: null, no_invented_claims: null, content_level_respect: null, french_quality: null, concision_usefulness: null },
+          inventions: [],
           comment: '',
         };
       }),
@@ -267,8 +291,9 @@ export function blindReviewGrid(byModel: Map<string, AnalysisRecord[]>, gt: Grou
   }
   return {
     grid: {
-      description: 'Revue humaine à l’aveugle des résumés B.2. Notes : 0 = insuffisant, 1 = acceptable, 2 = bon. Ne pas ouvrir le fichier de correspondance avant la fin de la revue.',
+      description: `Revue humaine à l’aveugle des résumés ${phaseLabel}. Notes : 0 = insuffisant, 1 = acceptable, 2 = bon. Ne pas ouvrir le fichier de correspondance avant la fin de la revue.`,
       criteria: ['factual_accuracy', 'essential_information', 'no_invented_claims', 'content_level_respect', 'french_quality', 'concision_usefulness'],
+      instructions: REVIEW_INSTRUCTIONS,
       reviewer: null,
       reviewedAt: null,
       items,
@@ -319,11 +344,11 @@ export interface RunFile {
 }
 
 /** Exécutions comparables : B.2 (mode full) avec la version courante du prompt. B.1 et anciens prompts : écartés. */
-export function selectComparableRuns(runs: RunFile[], promptVersion: string): { kept: RunFile[]; ignored: { file: string; reason: string }[] } {
+export function selectComparableRuns(runs: RunFile[], promptVersion: string, mode: 'full' | 'final' = 'full'): { kept: RunFile[]; ignored: { file: string; reason: string }[] } {
   const kept: RunFile[] = [];
   const ignored: { file: string; reason: string }[] = [];
   for (const r of runs) {
-    if (r.args?.mode !== 'full') ignored.push({ file: r.file, reason: `mode ${r.args?.mode ?? 'inconnu'} (historique B.1, non réutilisé)` });
+    if (r.args?.mode !== mode) ignored.push({ file: r.file, reason: `mode ${r.args?.mode ?? 'inconnu'} ≠ ${mode} (autre phase, non réutilisée)` });
     else if (r.promptVersion !== promptVersion) ignored.push({ file: r.file, reason: `prompt ${r.promptVersion ?? 'inconnu'} ≠ ${promptVersion}` });
     else kept.push(r);
   }

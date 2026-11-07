@@ -26,6 +26,7 @@ import type { PublicationInput } from '../types.js';
 import { PROMPT_VERSION } from '../prompt.js';
 import { EnvFileError, loadLocalEnv } from '../security/env-file.js';
 import { apiKeyConfigured, apiKeyFormatProblem } from '../adapters/real.js';
+import { verifyB3Freeze } from '../evaluation/b3-freeze.js';
 
 let args;
 try {
@@ -57,7 +58,17 @@ for (const p of ['anthropic', 'openai'] as const) {
   if (f) console.warn(`⚠️ ${f}`);
 }
 
-const items = (JSON.parse(await readFile(new URL('../../fixtures/evaluation-set.json', import.meta.url), 'utf8')) as { items: PublicationInput[] }).items;
+// Jeu de publications : B.1/B.2 (fixtures/evaluation-set.json) ou test final B3 (fixtures/b3/, figé : empreinte vérifiée).
+let items: PublicationInput[];
+if (args.mode === 'final') {
+  const freeze = await verifyB3Freeze();
+  if (!freeze.ok) {
+    console.error(`Jeu B3 refusé : ${freeze.problem}`);
+    process.exit(3);
+  }
+  items = (JSON.parse(await readFile(new URL('../../fixtures/b3/publications.json', import.meta.url), 'utf8')) as { items: PublicationInput[] }).items;
+  console.log(`Jeu B3 figé vérifié (empreinte ${freeze.sha256.slice(0, 12)}…)`);
+} else items = (JSON.parse(await readFile(new URL('../../fixtures/evaluation-set.json', import.meta.url), 'utf8')) as { items: PublicationInput[] }).items;
 const ledgerPath = `${VAR_DIR}budget-ledger.json`;
 let ledger: LedgerState | null = null;
 if (existsSync(ledgerPath)) ledger = JSON.parse(await readFile(ledgerPath, 'utf8')) as LedgerState;
