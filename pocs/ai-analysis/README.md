@@ -105,7 +105,7 @@ La comptabilité interne reste une estimation : il faut aussi configurer des pla
 - `reports/content-policy.md` : politiques par source et restrictions non résolues.
 - `reports/evaluation-readiness.md` : jeu d’évaluation, modes envoyés, coûts maximaux, mesure du préfiltre (généré).
 - `reports/budget-scenarios.md` : scénarios budgétaires exécutés et projections (généré).
-- `reports/phase-b3-final-test.md` : audit hors ligne de B.2 et préparation du test final B3 (jeu figé `fixtures/b3/`, règle de décision, phase B3 **inactive**). Comparaison : `npm run compare` (B.2) ou `npm run compare -- --phase=B3`.
+- `reports/phase-b3-final-test.md` : audit hors ligne de B.2 et préparation du test final B3 (jeu figé `fixtures/b3/`, règle de décision) et résultat de B3 (§ 8) : **GPT-6 Luna retenu selon le protocole B3**. Comparaison : `npm run compare` (B.2) ou `npm run compare -- --phase=B3`.
 - `reports/phase-b-security-audit.md` : audit de sécurité des dépenses (phase B.0), protections fournisseurs, prérequis et plan des smoke tests.
 - `reports/budget-audit.md` : audit de la protection budgétaire, limites et protections à configurer chez les fournisseurs.
 - `reports/evaluation-dataset-quality.md` : composition et cohérence du jeu d’évaluation (généré).

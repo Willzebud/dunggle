@@ -1,6 +1,8 @@
 # Audit de B.2 et préparation du test final B3
 
-> 2026-11-07. Travail **entièrement hors ligne** : aucun appel API, aucune autorisation créée, quotas et budget inchangés, résultats B.1/B.2 non modifiés. La phase B3 est configurée mais **inactive**.
+> **Mise à jour du 2026-11-07 : B3 exécuté et conclu. Résultat et limites au § 8.** GPT-6 Luna est retenu pour Dunggle selon le protocole B3.
+>
+> 2026-11-07, préparation (§ 1 à 7, texte d'origine conservé) : travail **entièrement hors ligne** ; aucun appel API, aucune autorisation créée ; quotas et budget inchangés ; résultats B.1/B.2 non modifiés. À ce stade, la phase B3 était configurée mais **inactive**.
 >
 > **Conflit d'intérêts à garder en tête :** cette analyse a été préparée par Claude, un modèle d'Anthropic, comme Haiku 5.5. Pour limiter ce biais, la décision finale repose sur une règle mécanique figée avant les tests (§ 4) et sur une revue humaine à l'aveugle, pas sur mon jugement. La lecture qualitative du § 1.4 n'est pas une évaluation humaine.
 
@@ -256,3 +258,85 @@ Pondération sur 100, appliquée par `src/evaluation/decision.ts` :
 - Il faudrait garder les résumés non validés pour les deux modèles.
 
 J'arrête ici. Aucun appel ni aucune nouvelle phase n'aura lieu sans votre autorisation explicite.
+
+## 8. Résultat de B3 et décision (2026-11-07)
+
+### 8.1 Exécution
+
+- **Activation de la phase :** commit `5be4619`, B3 uniquement. Simulation conforme, puis autorisation locale à usage unique.
+- **Appels :** 30 sur 30 autorisés (15 par modèle), une seule exécution. Aucune relance, aucune erreur fournisseur, aucun arrêt anticipé. Délai minimal de 75 s entre deux appels OpenAI respecté.
+- **Statuts :** 28 analyses valides et 2 sorties structurées invalides, rejetées sans correction.
+- **Coût réel de B3 : 0,011615 €**, pour un plafond de 0,06 € (réservation maximale : 0,051248 €).
+- **Budget du POC :** 0,036253 € dépensés sur 0,50 €, soit **0,463747 € restants**. Aucune réservation ouverte, aucun coût incertain, quota B3 consommé (30/30).
+
+### 8.2 Revue humaine à l'aveugle
+
+- **Relecteur :** l'utilisateur (initiales `WR`).
+- **Grille :** 4 publications, 7 résumés étiquetés A/B. Notes de 0 à 2 sur 6 critères.
+- **Garantie d'aveugle :** la correspondance A/B n'a été lue qu'après la validation automatique de la grille complète.
+- **Aucune invention documentée** pour l'un ou l'autre modèle.
+- **Moyennes humaines très proches :** Haiku 5.5 à 33/36 sur 3 résumés (1,83/2), Luna à 45/48 sur 4 résumés (1,875/2).
+- La grille, la correspondance et les sorties restent locales, dans `var/`, hors Git.
+
+### 8.3 Scores selon la règle figée (§ 4)
+
+| Critère (poids) | Claude Haiku 5.5 | GPT-6 Luna |
+|---|---|---|
+| Couverture des actualités importantes (30) | 22,5 | **30** |
+| Exactitude factuelle (25) | **25** | 23,44 |
+| Qualité des résumés (20) | 6,5 | **11** |
+| Fiabilité des sorties structurées (10) | 5 | **8** |
+| Classification (10) | 8,38 | **9,7** |
+| Coût et latence (5) | 3,4 | **4,47** |
+| **Total** | **70,78** | **86,61** |
+| Critère éliminatoire | **2 sorties invalides (seuil 2)** | aucun |
+
+**Lecture des scores :**
+- **Résumés.** Le score de résumé intègre le taux de résumés livrés : 3 sur 5 attendus pour Haiku, 4 sur 5 pour Luna. La qualité notée par le relecteur est presque identique.
+- **Sorties invalides de Haiku.** Elles portent sur 2 publications importantes :
+  - Nembra : sous-thème hors de la liste autorisée ;
+  - Halvard : JSON invalide.
+
+  Ces publications sont restées « en attente » et n'ont pas été exclues. C'est ce qui fait baisser la couverture importante de Haiku.
+- **Classement.** Haiku a conservé une publication promotionnelle qui devait être exclue (Merge). Luna a respecté toutes les décisions éditoriales attendues. Rubrique correcte : 12/15 pour Haiku, 15/15 pour Luna.
+- **Biais du domaine `.example`.** Aucune publication synthétique à conserver n'a été exclue. Brightwell, qui devait être exclue, l'a été par les deux modèles. Le biais observé en B.2 ne s'est pas reproduit.
+
+**Coût et latence :**
+
+| | Claude Haiku 5.5 | GPT-6 Luna |
+|---|---|---|
+| Coût des 15 publications | 0,007543 € | 0,004072 € |
+| Coût mensuel projeté (390 à 500 publications) | 0,23 à 0,29 € | 0,11 à 0,14 € |
+| Latence médiane | 2,4 s | 3,3 s |
+
+Ces écarts restent très loin du seuil éliminatoire (8 €/mois).
+
+### 8.4 Décision
+
+**GPT-6 Luna est retenu pour Dunggle selon le protocole B3.**
+- La décision est **définitive au sens de la règle figée** : grille humaine valide, aucun artefact de protocole neutralisé.
+- Luna est le seul modèle sans critère éliminatoire.
+- Sans l'élimination, Luna resterait devant de 15,8 points, au-delà de la marge de 5 points.
+
+### 8.5 Limites : ce que ce résultat ne dit pas
+
+Ce choix vaut **pour l'usage testé** : tri, classification et résumé en français de publications de veille, avec ce prompt (`bc786201b88a`), ce schéma de sortie et ce jeu. **Il ne se généralise pas** à d'autres tâches, d'autres langues, d'autres volumes ni à de futures versions des modèles.
+
+- **Échantillon réduit.**
+  - 15 publications, une seule exécution par modèle : la variabilité d'un appel à l'autre n'est pas mesurée.
+  - Les 2 sorties invalides de Haiku suffisent à l'éliminer. Avec un échantillon de cette taille, ce résultat peut dépendre du hasard.
+- **Revue humaine limitée.** 7 résumés sur 4 publications, notés par un seul relecteur. L'avantage de Luna en qualité de résumé n'est pas démontré : les notes humaines sont équivalentes.
+- **Données synthétiques.**
+  - 7 publications sur 15 sont synthétiques, sur des domaines `.example`.
+  - Les 8 publications réelles sont en métadonnées seules, sans résumé.
+  - La qualité des résumés sur de vrais articles complets n'est donc mesurée qu'indirectement.
+- **Correctifs non testés.** Une erreur de sous-thème de Haiku pourrait relever d'une validation stricte que le prompt pourrait mieux expliciter, mais cela n'a pas été testé. La règle figée a été appliquée telle quelle, sans réinterprétation a posteriori.
+- **Conflit d'intérêts.** L'analyse a été préparée par Claude, un modèle d'Anthropic. La décision repose sur la règle mécanique et la revue humaine.
+- **Suivi recommandé en production.** Surveiller en continu :
+  - le taux de sorties invalides ;
+  - les exclusions d'actualités importantes ;
+  - les résumés supprimés par les règles (2 chez Luna, 1 chez Haiku dans B3).
+
+  Toute réévaluation passera par une nouvelle phase explicitement autorisée.
+
+Aucune nouvelle campagne ni aucun appel supplémentaire n'est prévu.

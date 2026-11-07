@@ -7,7 +7,7 @@
  */
 import { VAR_DIR } from '../budget/factory.js';
 import { ActivationError, confirmationPhrase, createGrant } from '../security/activation.js';
-import type { PocPhase } from '../config/quotas.js';
+import { POC_PHASES, type PocPhase } from '../config/quotas.js';
 
 const opts: Record<string, string> = {};
 for (const raw of process.argv.slice(2)) {
@@ -25,11 +25,11 @@ const models = (opts['--models'] ?? '').split(',').filter(Boolean);
 try {
   const g = await createGrant({ phase, models, maxEur, confirm: opts['--confirm'] ?? '' }, VAR_DIR);
   console.log(`Autorisation créée pour ${g.phase} : modèles ${g.models.join(', ')}, montant maximal ${g.maxEur} €, valable jusqu’à ${g.expiresAt} (usage unique).`);
-  console.log(`Lancez maintenant : npm run poc2:evaluate -- --mode=${phase === 'B1' ? 'smoke' : 'full'} --real --confirm-max-eur=${g.maxEur}`);
+  console.log(`Lancez maintenant : npm run poc2:evaluate -- --mode=${POC_PHASES[g.phase].mode} --real --confirm-max-eur=${g.maxEur}`);
 } catch (e) {
   if (e instanceof ActivationError) {
     console.error(`Autorisation refusée : ${e.message}`);
-    if (Number.isFinite(maxEur) && (phase === 'B1' || phase === 'B2')) console.error(`Phrase attendue : ${confirmationPhrase(phase, maxEur)}`);
+    if (Number.isFinite(maxEur) && phase in POC_PHASES) console.error(`Phrase attendue : ${confirmationPhrase(phase, maxEur)}`);
     process.exit(2);
   }
   throw e;
