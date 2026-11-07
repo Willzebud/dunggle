@@ -29,7 +29,7 @@ try {
 } catch (e) {
   if (e instanceof ActivationError) {
     console.error(`Autorisation refusée : ${e.message}`);
-    if (Number.isFinite(maxEur) && phase in POC_PHASES) console.error(`Phrase attendue : ${confirmationPhrase(phase, maxEur)}`);
+    if (Number.isFinite(maxEur) && phase in POC_PHASES && POC_PHASES[phase].active) console.error(`Phrase attendue : ${confirmationPhrase(phase, maxEur)}`);
     process.exit(2);
   }
   throw e;

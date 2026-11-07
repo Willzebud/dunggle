@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { forbidNetwork, evaluationSet } from './helpers.js';
+import { forbidNetwork, evaluationSet, testGuard, testCreateGrant } from './helpers.js';
 import { ANALYSIS_JSON_SCHEMA, NO_EXCLUSION, providerSchemaProblems, validateAnalysis } from '../src/schema.js';
 import { EXCLUSION_REASONS } from '../src/taxonomy.js';
 import { MockAdapter, mockOutput } from '../src/adapters/mock.js';
@@ -98,7 +98,7 @@ test('Les deux adaptateurs et le pipeline transmettent exactement le schéma cor
   let seen: unknown = null;
   const adapter = new MockAdapter((r) => ((seen = r.schema), { rawText: mockOutput({ exclusionReason: 'none' }), usage: { inputTokens: 900, outputTokens: 120 }, stopReason: 'end_turn' }));
   const fixture = evaluationSet.items.find((i) => i.id === SMOKE_FIXTURE_ID)!;
-  const rec = await analyzePublication(fixture, { adapter, guard: new BudgetGuard(new MemoryBudgetStore()) });
+  const rec = await analyzePublication(fixture, { adapter, guard: testGuard(new MemoryBudgetStore()) });
   assert.equal(seen, ANALYSIS_JSON_SCHEMA);
   assert.equal(rec.status, 'analyzed');
 });
@@ -134,7 +134,7 @@ test('Exception B.1 : figée, B.1 uniquement, Haiku uniquement, +1 tentative ; r
   assert.equal(phaseModelMax('B2', HAIKU), 37);
   assert.equal(phaseModelMax('B2', LUNA), 38, 'B.2 : +1 Luna (exception liée)');
   assert.equal(phaseTotalMax('B2'), 75);
-  assert.deepEqual({ ...POC_PHASES.B1 }, { mode: 'smoke', perModelMax: 1, totalMax: 2, description: POC_PHASES.B1.description, active: true });
+  assert.deepEqual({ ...POC_PHASES.B1 }, { mode: 'smoke', perModelMax: 1, totalMax: 2, description: POC_PHASES.B1.description, active: false });
   assert.deepEqual({ ...PRODUCTION_QUOTAS }, { dailyMax: 20, monthlyMax: 500, perRunMax: 10 });
   assert.equal(DEFAULT_LIMITS.trialTotalCapEur, 0.5);
 });
@@ -142,14 +142,14 @@ test('Exception B.1 : figée, B.1 uniquement, Haiku uniquement, +1 tentative ; r
 let ACT: RealCallActivation;
 before(async () => {
   const dir = `${await mkdtemp(join(tmpdir(), 'dunggle-act-'))}/`;
-  await createGrant({ phase: 'B1', models: [HAIKU, LUNA], maxEur: 0.004, confirm: confirmationPhrase('B1', 0.004) }, dir);
+  await testCreateGrant({ phase: 'B1', models: [HAIKU, LUNA], maxEur: 0.004, confirm: confirmationPhrase('B1', 0.004) }, dir);
   ACT = await consumeGrant(dir, { phase: 'B1', models: [HAIKU, LUNA], maxEur: 0.004 });
 });
 const env = { ANTHROPIC_API_KEY: ['sk', 'ant', 'api03', 'TESTREPRISEB1xxxxxxxxxxxxxx'].join('-'), OPENAI_API_KEY: ['sk', 'proj', 'TESTREPRISEB1xxxxxxxxxxxxxxxx'].join('-') } as NodeJS.ProcessEnv;
 
 /** Registre reproduisant l'état réel après l'incident : une tentative Haiku B.1 transmise, non facturée. */
 async function guardAfterIncident() {
-  const guard = new BudgetGuard(new MemoryBudgetStore());
+  const guard = testGuard(new MemoryBudgetStore());
   const r = await guard.reserve({ modelKey: HAIKU, inputTokensEstimate: 7288, quota: { scope: 'trial', phase: 'B1', runId: 'incident' } });
   await guard.release(r.id, 'HTTP 400 schéma', { transmitted: true });
   const s = await guard.snapshot();
@@ -183,7 +183,7 @@ test('Reprise B.1 : un appel Haiku + un appel Luna, même fixture, puis plus auc
 });
 
 test('Reprise B.1 : une exécution ne peut pas consommer deux tentatives Haiku (même avec --max-calls)', async () => {
-  const guard = new BudgetGuard(new MemoryBudgetStore());
+  const guard = testGuard(new MemoryBudgetStore());
   const plan = planRun(parseArgs(['--mode=smoke', '--max-calls=5', '--model=' + HAIKU]), evaluationSet.items, guard, null);
   assert.equal(plan.calls.length, 1, 'un appel Haiku par exécution');
   // Même par appels directs : la 3e tentative cumulée Haiku est refusée.
@@ -213,7 +213,7 @@ test('Reprise B.1 : nouvelle autorisation exigée, coût incertain bloquant, auc
   const again = await executeRun(args, planRun(args, evaluationSet.items, guard, await guard.snapshot()), deps(guard));
   assert.equal(again.executed, false);
   // Budget : un plafond d'essai insuffisant bloque avant toute réservation.
-  const tight = new BudgetGuard(new MemoryBudgetStore(), { ...DEFAULT_LIMITS, trialTotalCapEur: 0.001 });
+  const tight = testGuard(new MemoryBudgetStore(), { ...DEFAULT_LIMITS, trialTotalCapEur: 0.001 });
   const rb = await executeRun(args, planRun(args, evaluationSet.items, tight, null), deps(tight));
   assert.equal(rb.executed, false);
   assert.ok(rb.blockers.some((b) => /Budget d’essai restant/.test(b)));

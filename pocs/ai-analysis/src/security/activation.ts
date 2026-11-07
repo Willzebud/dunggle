@@ -10,7 +10,7 @@
  */
 import { mkdir, readFile, rename, writeFile, open } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { POC_PHASES, type PocPhase } from '../config/quotas.js';
+import { POC_PHASES, type PocPhase, type PocPhaseQuotas } from '../config/quotas.js';
 import { CANDIDATE_MODEL_KEYS } from '../config/models.js';
 
 export const GRANT_TTL_MS = 15 * 60_000;
@@ -82,9 +82,11 @@ export async function createGrant(
   p: { phase: PocPhase; models: string[]; maxEur: number; confirm: string },
   dir: string,
   now = new Date(),
+  /** Table des phases : configuration versionnée par défaut (toutes fermées) ; injectable uniquement par code (tests). */
+  phases: Readonly<Record<PocPhase, Readonly<PocPhaseQuotas>>> = POC_PHASES,
 ): Promise<RealCallGrant> {
-  if (!(p.phase in POC_PHASES)) throw new ActivationError(`Phase inconnue : ${p.phase}`);
-  if (!POC_PHASES[p.phase].active) throw new ActivationError(`Phase ${p.phase} inactive : aucune autorisation ne peut être créée avant son activation explicite`);
+  if (!(p.phase in phases)) throw new ActivationError(`Phase inconnue : ${p.phase}`);
+  if (!phases[p.phase].active) throw new ActivationError(`Phase ${p.phase} inactive : aucune autorisation ne peut être créée avant son activation explicite`);
   if (!p.models.length || p.models.some((m) => !CANDIDATE_MODEL_KEYS.includes(m))) throw new ActivationError('Modèles non candidats');
   if (!(p.maxEur > 0 && p.maxEur <= 0.5)) throw new ActivationError('Montant maximal hors bornes (> 0 et ≤ 0,50 €)');
   if (p.confirm !== confirmationPhrase(p.phase, p.maxEur)) throw new ActivationError(`Confirmation incorrecte : tapez exactement « ${confirmationPhrase(p.phase, p.maxEur)} »`);

@@ -5,7 +5,7 @@ import { DEFAULT_LIMITS, type BudgetLimits } from '../config/budget.js';
 import { MODELS, type ModelConfig, type PriceTier } from '../config/models.js';
 import type { AnalysisEntry, BudgetStore, LedgerState, Reservation, UncertainEntry } from './store.js';
 import { redactDeep, redactSecrets } from '../security/redact.js';
-import { POC_PHASES, PRODUCTION_QUOTAS, boundExceptionFor, consumedBoundExceptions, phaseModelBaseMax, phaseModelMax, phaseTotalBaseMax, phaseTotalMax, type ProductionQuotas, type QuotaContext } from '../config/quotas.js';
+import { POC_PHASES, PRODUCTION_QUOTAS, type PocPhase, type PocPhaseQuotas, boundExceptionFor, consumedBoundExceptions, phaseModelBaseMax, phaseModelMax, phaseTotalBaseMax, phaseTotalMax, type ProductionQuotas, type QuotaContext } from '../config/quotas.js';
 import { parisDay, parisMonth } from '../quota/time.js';
 
 export type RefusalCode =
@@ -102,6 +102,12 @@ export class BudgetGuard {
     private readonly now: () => Date = () => new Date(),
     private readonly models: Record<string, ModelConfig> = MODELS,
     readonly productionQuotas: Readonly<ProductionQuotas> = PRODUCTION_QUOTAS,
+    /**
+     * Table des phases du POC (ouverture `active` et plafonds de base). Défaut : la configuration versionnée
+     * POC_PHASES, où toutes les phases sont FERMÉES depuis le 2026-11-07. Injectable uniquement par code (tests de
+     * mécanique des quotas), jamais par une donnée d'entrée, un argument CLI ou une variable d'environnement.
+     */
+    readonly phases: Readonly<Record<PocPhase, Readonly<PocPhaseQuotas>>> = POC_PHASES,
   ) {
     const errors = validateLimits(limits);
     if (errors.length) throw new BudgetRefusedError('invalid-limits', errors.join(' ; '));
@@ -215,7 +221,7 @@ export class BudgetGuard {
       if ((Q.monthly[monthlyKey] ?? 0) >= P.monthlyMax) throw new BudgetRefusedError('quota-monthly', `Quota mensuel atteint (${P.monthlyMax} appels, ${monthlyKey.split('|')[1]})`);
       if (run >= P.perRunMax) throw new BudgetRefusedError('quota-run', `Quota de l’exécution atteint (${P.perRunMax} appels)`);
     } else {
-      const P = POC_PHASES[q.phase];
+      const P = this.phases[q.phase];
       if (!P?.active) throw new BudgetRefusedError('quota-phase-inactive', `Phase ${q.phase} inactive : aucune réservation possible avant son activation explicite`);
       const ph = Q.phases[q.phase] ?? { total: 0, perModel: {} };
       // Plafonds cumulatifs = base + exceptions versionnées ; le plafond par exécution reste celui de base.

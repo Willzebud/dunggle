@@ -3,7 +3,7 @@ import type { BudgetGuard } from '../budget/guard.js';
 import type { AIAdapter } from '../adapters/types.js';
 import { apiKeyConfigured, apiKeyFormatProblem } from '../adapters/real.js';
 import { MODELS } from '../config/models.js';
-import { POC_PHASES, PROVIDER_MIN_GAP_AFTER_END_MS, phaseTotalMax } from '../config/quotas.js';
+import { PROVIDER_MIN_GAP_AFTER_END_MS, phaseTotalMax } from '../config/quotas.js';
 import { MemoryPacingStore, ProviderPacer, type Provider } from './pacing.js';
 import { analyzePublication } from '../pipeline.js';
 import { activationAllows, type RealCallActivation } from '../security/activation.js';
@@ -82,7 +82,7 @@ export interface RunReport {
 export async function realRunBlockers(args: RunArgs, plan: RunPlan, deps: Omit<RunDeps, 'activation'>): Promise<string[]> {
   const b: string[] = [];
   if (!args.real) b.push('Mode simulation (--real absent)');
-  if (!POC_PHASES[plan.phase]?.active) b.push(`Phase ${plan.phase} inactive : aucune réservation ni aucun appel possible avant son activation explicite`);
+  if (!deps.guard.phases[plan.phase]?.active) b.push(`Phase ${plan.phase} inactive : aucune réservation ni aucun appel possible avant son activation explicite`);
   if (args.confirmMaxEur === null) b.push(`--confirm-max-eur absent (coût maximal du plan : ${plan.totalMaxEur} €)`);
   else if (args.confirmMaxEur < plan.totalMaxEur) b.push(`--confirm-max-eur=${args.confirmMaxEur} < coût maximal du plan (${plan.totalMaxEur} €)`);
   for (const k of new Set(plan.calls.map((c) => c.modelKey))) {

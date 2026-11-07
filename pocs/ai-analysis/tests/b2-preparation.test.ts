@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { forbidNetwork, evaluationSet, groundTruth } from './helpers.js';
+import { forbidNetwork, evaluationSet, groundTruth, testGuard, testCreateGrant } from './helpers.js';
 import { autoCheckSummary, containsClaim } from '../src/evaluation/summary-checks.js';
 import { blindReviewGrid, computeModelMetrics, latestRecords, selectComparableRuns, type GroundTruthItem } from '../src/evaluation/compare.js';
 import { PROMPT_VERSION } from '../src/prompt.js';
@@ -60,7 +60,7 @@ test('Affirmation interdite : les résumés réels de B.1 ne sont plus signalés
  * (clé d'idempotence différente de la version courante), quotas B.1 consommés.
  */
 async function guardAfterB1(store = new MemoryBudgetStore()) {
-  const g = new BudgetGuard(store);
+  const g = testGuard(store);
   for (const m of MODELS2) {
     const r = await g.reserve({ modelKey: m, inputTokensEstimate: 7460, idempotencyKey: `${m}|${SMOKE_FIXTURE_ID}|1c46e6992832`, quota: { scope: 'trial', phase: 'B1', runId: `b1-${m}` } });
     await g.reconcile(r.id, { inputTokens: 1500, outputTokens: 450 });
@@ -103,7 +103,7 @@ test('B.2 : durée estimée compatible avec l’activation B.2 (90 min), B.1 inc
   assert.ok(Object.isFrozen(ACTIVATION_TTL_MS_BY_PHASE));
   for (const phase of ['B1', 'B2'] as const) {
     const dir = `${await mkdtemp(join(tmpdir(), 'dunggle-ttl-'))}/`;
-    await createGrant({ phase, models: MODELS2, maxEur: 0.2, confirm: confirmationPhrase(phase, 0.2) }, dir);
+    await testCreateGrant({ phase, models: MODELS2, maxEur: 0.2, confirm: confirmationPhrase(phase, 0.2) }, dir);
     const now = new Date();
     const a = await consumeGrant(dir, { phase, models: MODELS2, maxEur: 0.2 }, now);
     assert.equal(a.validUntil - now.getTime(), ACTIVATION_TTL_MS_BY_PHASE[phase]);
@@ -114,7 +114,7 @@ test('B.2 : durée estimée compatible avec l’activation B.2 (90 min), B.1 inc
 let ACT_B2: RealCallActivation;
 before(async () => {
   const dir = `${await mkdtemp(join(tmpdir(), 'dunggle-act-'))}/`;
-  await createGrant({ phase: 'B2', models: MODELS2, maxEur: 0.13, confirm: confirmationPhrase('B2', 0.13) }, dir);
+  await testCreateGrant({ phase: 'B2', models: MODELS2, maxEur: 0.13, confirm: confirmationPhrase('B2', 0.13) }, dir);
   ACT_B2 = await consumeGrant(dir, { phase: 'B2', models: MODELS2, maxEur: 0.13 });
 });
 const env = { ANTHROPIC_API_KEY: ['sk', 'ant', 'api03', 'TESTB2xxxxxxxxxxxxxxxxxxxxx'].join('-'), OPENAI_API_KEY: ['sk', 'proj', 'TESTB2xxxxxxxxxxxxxxxxxxxxxxx'].join('-') } as NodeJS.ProcessEnv;

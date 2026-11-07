@@ -1,6 +1,6 @@
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { forbidNetwork, networkCalls, pub, byId, evaluationSet } from './helpers.js';
+import { forbidNetwork, networkCalls, pub, byId, evaluationSet, testGuard } from './helpers.js';
 import { analyzePublication, computeSection, ungroundedNumbers } from '../src/pipeline.js';
 import { MockAdapter, mockOutput } from '../src/adapters/mock.js';
 import { ProviderError } from '../src/adapters/types.js';
@@ -14,7 +14,7 @@ import type { AnalysisOutput } from '../src/types.js';
 before(forbidNetwork);
 
 const now = () => new Date('2026-11-06T10:00:00.000Z');
-const guard = (over = {}) => new BudgetGuard(new MemoryBudgetStore(), { ...DEFAULT_LIMITS, ...over }, new MemoryUsageLogger(), now);
+const guard = (over = {}) => testGuard(new MemoryBudgetStore(), { ...DEFAULT_LIMITS, ...over }, new MemoryUsageLogger(), now);
 const ok = (over: Record<string, unknown> = {}) => new MockAdapter(() => ({ rawText: mockOutput(over), usage: { inputTokens: 500, outputTokens: 100 }, stopReason: 'end_turn' }));
 
 test('URL originale conservée à l’identique, quel que soit le statut', async () => {

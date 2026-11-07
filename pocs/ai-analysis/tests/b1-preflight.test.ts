@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { forbidNetwork, evaluationSet } from './helpers.js';
+import { forbidNetwork, evaluationSet, testGuard, testCreateGrant } from './helpers.js';
 import { loadLocalEnv, parseEnvFile, defaultGitIgnored, EnvFileError } from '../src/security/env-file.js';
 import { MockAdapter, mockOutput } from '../src/adapters/mock.js';
 import { classifySdkError, SDK_OPTIONS, apiKeyFormatProblem, AnthropicAdapter, OpenAIAdapter } from '../src/adapters/real.js';
@@ -89,7 +89,7 @@ test('.env réel du POC : ignoré par Git (vérifié sans lire le fichier)', () 
 
 // ================================================================ Plan B.1
 test('B.1 : exactement une requête par fournisseur, sur la fixture synthétique, coût maximal ≤ 0,004 € (montant confirmé de B.1)', () => {
-  const plan = planRun(parseArgs(['--mode=smoke']), evaluationSet.items, new BudgetGuard(new MemoryBudgetStore()), null);
+  const plan = planRun(parseArgs(['--mode=smoke']), evaluationSet.items, testGuard(new MemoryBudgetStore()), null);
   assert.equal(plan.phase, 'B1');
   assert.equal(plan.calls.length, 2);
   assert.deepEqual(plan.calls.map((c) => MODELS[c.modelKey].provider).sort(), ['anthropic', 'openai']);
@@ -118,7 +118,7 @@ before(async () => {
   const models = ['anthropic-haiku-5-5', 'openai-gpt-6-luna'];
   for (const phase of ['B1', 'B2'] as const) {
     const dir = `${await mkdtemp(join(tmpdir(), 'dunggle-act-'))}/`;
-    await createGrant({ phase, models, maxEur: 0.5, confirm: confirmationPhrase(phase, 0.5) }, dir);
+    await testCreateGrant({ phase, models, maxEur: 0.5, confirm: confirmationPhrase(phase, 0.5) }, dir);
     const a = await consumeGrant(dir, { phase, models, maxEur: 0.5 });
     if (phase === 'B1') ACT_B1 = a;
     else ACT_B2 = a;
@@ -144,7 +144,7 @@ function clockDeps(guard: BudgetGuard, activation: RealCallActivation, adapterFo
 }
 
 test('OpenAI 1 requête/minute : B.1 n’attend pas (une requête par fournisseur)', async () => {
-  const guard = new BudgetGuard(new MemoryBudgetStore());
+  const guard = testGuard(new MemoryBudgetStore());
   const args = parseArgs(['--mode=smoke', '--real', '--confirm-max-eur=0.004']);
   const { deps, sleeps, sent } = clockDeps(guard, ACT_B1, ok);
   const r = await executeRun(args, planRun(args, evaluationSet.items, guard, null), deps);
@@ -154,7 +154,7 @@ test('OpenAI 1 requête/minute : B.1 n’attend pas (une requête par fournisseu
 });
 
 test('OpenAI 1 requête/minute : en B.2, chaque requête OpenAI part au moins 75 s après la FIN de la précédente', async () => {
-  const guard = new BudgetGuard(new MemoryBudgetStore());
+  const guard = testGuard(new MemoryBudgetStore());
   const args = parseArgs(['--mode=full', '--real', '--confirm-max-eur=0.5', '--max-calls=3']);
   const { deps, sent } = clockDeps(guard, ACT_B2, ok);
   const r = await executeRun(args, planRun(args, evaluationSet.items, guard, null), deps);
@@ -170,7 +170,7 @@ test('Aucune relance automatique : SDK sans retry, 429 compté et exécution arr
   const e = classifySdkError({ status: 429, message: 'Rate limit reached' });
   assert.equal(e.kind, 'rate-limit');
   assert.equal(e.transmitted, true);
-  const guard = new BudgetGuard(new MemoryBudgetStore());
+  const guard = testGuard(new MemoryBudgetStore());
   const args = parseArgs(['--mode=smoke', '--real', '--confirm-max-eur=0.004']);
   let attempts = 0;
   const failing = (k: string) => new MockAdapter(() => { attempts++; return Promise.reject(classifySdkError({ status: 429, message: 'limit' })); }, MODELS[k]);
@@ -189,7 +189,7 @@ test('Clés inversées : exécution refusée avant toute réservation, et aucun 
   assert.equal(apiKeyFormatProblem('anthropic', fakeEnv), null);
   assert.equal(apiKeyFormatProblem('openai', fakeEnv), null);
   assert.ok(![apiKeyFormatProblem('anthropic', swapped), apiKeyFormatProblem('openai', swapped)].join().includes('VALEURDETEST'), 'aucune valeur dans le message');
-  const guard = new BudgetGuard(new MemoryBudgetStore());
+  const guard = testGuard(new MemoryBudgetStore());
   const args = parseArgs(['--mode=smoke', '--real', '--confirm-max-eur=0.004']);
   const { deps } = clockDeps(guard, ACT_B1, ok);
   const r = await executeRun(args, planRun(args, evaluationSet.items, guard, null), { ...deps, env: swapped });

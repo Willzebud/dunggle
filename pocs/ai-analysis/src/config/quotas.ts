@@ -34,11 +34,16 @@ export interface PocPhaseQuotas {
 /**
  * POC : règles distinctes (périmètre `trial`), pour ne pas fausser le protocole de comparaison.
  * Les compteurs de phase et le budget cumulé de 0,50 € ne sont JAMAIS remis à zéro (B.1 puis B.2).
- * Chaque phase exige sa propre autorisation locale à usage unique.
+ * Chaque phase exigeait sa propre autorisation locale à usage unique.
+ *
+ * POC CLÔTURÉ le 2026-11-07 : les trois phases sont FERMÉES (`active: false`) ; quotas épuisés (B1 3/3, B2 75/75,
+ * B3 30/30). Aucune réservation, autorisation ni exécution réelle n'est plus possible. Les plafonds restent comme
+ * trace historique. Les tests de mécanique utilisent une copie ouverte injectée (tests/helpers.ts) ; la fermeture
+ * réelle est vérifiée par tests/phases-closed.test.ts.
  */
 export const POC_PHASES: Readonly<Record<PocPhase, Readonly<PocPhaseQuotas>>> = Object.freeze({
-  B1: Object.freeze({ mode: 'smoke', perModelMax: 1, totalMax: 2, description: 'Smoke tests : un appel par modèle', active: true }),
-  B2: Object.freeze({ mode: 'full', perModelMax: 37, totalMax: 74, description: 'Évaluation complète : jusqu’à 37 publications par modèle', active: true }),
+  B1: Object.freeze({ mode: 'smoke', perModelMax: 1, totalMax: 2, description: 'Smoke tests : un appel par modèle', active: false }),
+  B2: Object.freeze({ mode: 'full', perModelMax: 37, totalMax: 74, description: 'Évaluation complète : jusqu’à 37 publications par modèle', active: false }),
   // Test final discriminant (préparé le 2026-11-07, reports/phase-b3-final-test.md) : 15 publications figées
   // (fixtures/b3/, empreinte B3_FREEZE_SHA256) × 2 modèles. Activée le 2026-11-07 sur autorisation explicite de
   // l'utilisateur, exécutée (30/30 appels, 0,011615 €) puis CLÔTURÉE et DÉSACTIVÉE le même jour : plus aucune

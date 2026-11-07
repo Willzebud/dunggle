@@ -7,7 +7,7 @@ import { mkdtemp, rm, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
-import { forbidNetwork, evaluationSet, pub } from './helpers.js';
+import { forbidNetwork, evaluationSet, pub, testGuard, testCreateGrant } from './helpers.js';
 import { BudgetGuard, BudgetRefusedError } from '../src/budget/guard.js';
 import { FileBudgetStore, MemoryBudgetStore, emptyState, type LedgerState } from '../src/budget/store.js';
 import { DEFAULT_LIMITS } from '../src/config/budget.js';
@@ -42,7 +42,7 @@ test('production : valeurs par défaut gelées (20/jour, 10/exécution, 500/mois
 });
 
 test('production : 21e appel quotidien refusé, quota partagé entre fournisseurs', async () => {
-  const g = new BudgetGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
+  const g = testGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
   for (let i = 0; i < 20; i++) await reserveOp(g, `run-${Math.floor(i / 10)}`, i); // 2 exécutions de 10, deux fournisseurs alternés
   await assert.rejects(reserveOp(g, 'run-3'), (e) => code(e) === 'quota-daily');
   const s = await g.snapshot();
@@ -50,7 +50,7 @@ test('production : 21e appel quotidien refusé, quota partagé entre fournisseur
 });
 
 test('production : 11e appel de la même exécution refusé', async () => {
-  const g = new BudgetGuard(new MemoryBudgetStore());
+  const g = testGuard(new MemoryBudgetStore());
   for (let i = 0; i < 10; i++) await reserveOp(g, 'run-A', i);
   await assert.rejects(reserveOp(g, 'run-A'), (e) => code(e) === 'quota-run');
   await reserveOp(g, 'run-B'); // une autre exécution reste possible dans le quota quotidien
@@ -58,9 +58,9 @@ test('production : 11e appel de la même exécution refusé', async () => {
 
 test('production : 501e appel mensuel refusé (compteurs persistés)', async () => {
   const initial: LedgerState = { ...emptyState(), quotas: { daily: {}, monthly: { 'operational|2026-11': 500 }, runs: {}, phases: {} } };
-  const g = new BudgetGuard(new MemoryBudgetStore(initial), DEFAULT_LIMITS, undefined, at('2026-11-20T10:00:00Z'));
+  const g = testGuard(new MemoryBudgetStore(initial), DEFAULT_LIMITS, undefined, at('2026-11-20T10:00:00Z'));
   await assert.rejects(reserveOp(g, 'r'), (e) => code(e) === 'quota-monthly');
-  const g2 = new BudgetGuard(new MemoryBudgetStore({ ...initial, quotas: { ...initial.quotas, monthly: { 'operational|2026-11': 499 } } }), DEFAULT_LIMITS, undefined, at('2026-11-20T10:00:00Z'));
+  const g2 = testGuard(new MemoryBudgetStore({ ...initial, quotas: { ...initial.quotas, monthly: { 'operational|2026-11': 499 } } }), DEFAULT_LIMITS, undefined, at('2026-11-20T10:00:00Z'));
   await reserveOp(g2, 'r'); // 500e accepté
   await assert.rejects(reserveOp(g2, 'r2'), (e) => code(e) === 'quota-monthly'); // 501e refusé
 });
@@ -69,8 +69,8 @@ test('production : deux gardes concurrents sur le même registre ne dépassent p
   const dir = await tmp();
   try {
     const path = join(dir, 'ledger.json');
-    const g1 = new BudgetGuard(new FileBudgetStore(path), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
-    const g2 = new BudgetGuard(new FileBudgetStore(path), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
+    const g1 = testGuard(new FileBudgetStore(path), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
+    const g2 = testGuard(new FileBudgetStore(path), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
     const res = await Promise.allSettled(Array.from({ length: 30 }, (_, i) => reserveOp(i % 2 ? g1 : g2, `run-${i % 4}`, i)));
     assert.equal(res.filter((r) => r.status === 'fulfilled').length, 20);
   } finally {
@@ -115,7 +115,7 @@ test('Europe/Paris : clés de jour correctes, y compris aux changements d’heur
 
 test('changement de jour Europe/Paris : le quota repart à minuit Paris, pas à minuit UTC', async () => {
   let t = new Date('2026-11-05T22:00:00Z'); // 23:00 à Paris
-  const g = new BudgetGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, () => t);
+  const g = testGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, () => t);
   for (let i = 0; i < 20; i++) await reserveOp(g, `r${Math.floor(i / 10)}`, i);
   t = new Date('2026-11-05T22:59:00Z'); // 23:59 Paris
   await assert.rejects(reserveOp(g, 'r9'), (e) => code(e) === 'quota-daily');
@@ -128,7 +128,7 @@ test('changement de jour Europe/Paris : le quota repart à minuit Paris, pas à 
 
 test('changement d’heure (25 octobre) : pas de remise à zéro pendant l’heure répétée', async () => {
   let t = new Date('2026-10-24T22:30:00Z'); // 00:30 CEST le 25
-  const g = new BudgetGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, () => t);
+  const g = testGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, () => t);
   for (let i = 0; i < 20; i++) await reserveOp(g, `r${Math.floor(i / 10)}`, i);
   t = new Date('2026-10-25T00:30:00Z'); // 02:30 CEST, puis
   await assert.rejects(reserveOp(g, 'x1'), (e) => code(e) === 'quota-daily');
@@ -141,7 +141,7 @@ test('changement d’heure (25 octobre) : pas de remise à zéro pendant l’heu
 test('changement de mois Europe/Paris : 31/10 23:59 refusé, 01/11 00:00 accepté', async () => {
   const initial: LedgerState = { ...emptyState(), quotas: { daily: {}, monthly: { 'operational|2026-10': 500 }, runs: {}, phases: {} } };
   let t = new Date('2026-10-31T22:59:00Z'); // 23:59 CET le 31 octobre
-  const g = new BudgetGuard(new MemoryBudgetStore(initial), DEFAULT_LIMITS, undefined, () => t);
+  const g = testGuard(new MemoryBudgetStore(initial), DEFAULT_LIMITS, undefined, () => t);
   await assert.rejects(reserveOp(g, 'm1'), (e) => code(e) === 'quota-monthly');
   t = new Date('2026-10-31T23:00:00Z'); // 00:00 le 1er novembre à Paris
   await reserveOp(g, 'm2');
@@ -151,9 +151,9 @@ test('redémarrage : les compteurs persistés ne sont jamais réinitialisés', a
   const dir = await tmp();
   try {
     const path = join(dir, 'ledger.json');
-    const g1 = new BudgetGuard(new FileBudgetStore(path), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
+    const g1 = testGuard(new FileBudgetStore(path), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
     for (let i = 0; i < 20; i++) await reserveOp(g1, `r${Math.floor(i / 10)}`, i);
-    const g2 = new BudgetGuard(new FileBudgetStore(path), DEFAULT_LIMITS, undefined, at('2026-11-06T11:00:00Z')); // nouveau processus
+    const g2 = testGuard(new FileBudgetStore(path), DEFAULT_LIMITS, undefined, at('2026-11-06T11:00:00Z')); // nouveau processus
     await assert.rejects(reserveOp(g2, 'apres-redemarrage'), (e) => code(e) === 'quota-daily');
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -164,7 +164,7 @@ test('redémarrage : les compteurs persistés ne sont jamais réinitialisés', a
 test('tentatives : timeout après envoi et refus 4xx comptent ; refus avant envoi ne compte pas', async () => {
   const quota = op('t');
   const count = async (g: BudgetGuard) => (await g.snapshot()).quotas.runs.t ?? 0;
-  const g1 = new BudgetGuard(new MemoryBudgetStore(), { ...DEFAULT_LIMITS, blockWhenUncertain: false });
+  const g1 = testGuard(new MemoryBudgetStore(), { ...DEFAULT_LIMITS, blockWhenUncertain: false });
   await analyzePublication(pub({ id: 'a' }), { adapter: new MockAdapter(() => Promise.reject(new ProviderError('timeout', 'délai', true))), guard: g1, scope: 'operational', quota });
   assert.equal(await count(g1), 1, 'timeout après envoi : compté (coût incertain)');
   await analyzePublication(pub({ id: 'b' }), { adapter: new MockAdapter(() => Promise.reject(new ProviderError('rate-limit', 'HTTP 429', false, null, true))), guard: g1, scope: 'operational', quota });
@@ -175,16 +175,16 @@ test('tentatives : timeout après envoi et refus 4xx comptent ; refus avant envo
 
 // ------------------------------------------------------------------ contournements
 test('contournements : identifiants d’exécution multiples, adaptateur réel sans quota, réservation sans quota', async () => {
-  const g = new BudgetGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
+  const g = testGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, at('2026-11-06T10:00:00Z'));
   for (let i = 0; i < 20; i++) await reserveOp(g, `run-unique-${i}`, i); // une exécution par appel
   await assert.rejects(reserveOp(g, 'encore-une'), (e) => code(e) === 'quota-daily', 'multiplier les exécutions ne contourne pas le quota quotidien');
-  const real = await analyzePublication(pub(), { adapter: new AnthropicAdapter(MODELS['anthropic-haiku-5-5']), guard: new BudgetGuard(new MemoryBudgetStore()) });
+  const real = await analyzePublication(pub(), { adapter: new AnthropicAdapter(MODELS['anthropic-haiku-5-5']), guard: testGuard(new MemoryBudgetStore()) });
   assert.equal(real.status, 'refused-quota', 'un adaptateur réel exige un contexte de quota');
 });
 
 test('dépassement : publications non traitées conservées en attente, ni analysées ni relancées ; reprise le lendemain', async () => {
   let t = new Date('2026-11-06T10:00:00Z');
-  const g = new BudgetGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, () => t);
+  const g = testGuard(new MemoryBudgetStore(), DEFAULT_LIMITS, undefined, () => t);
   const items = Array.from({ length: 25 }, (_, i) => pub({ id: `p${i}`, url: `https://example.invalid/dunggle-fixtures/p${i}`, publishedAt: '2026-11-05T08:00:00Z' }));
   const adapter = new MockAdapter(() => ({ rawText: mockOutput(), usage: { inputTokens: 500, outputTokens: 50 }, stopReason: 'end_turn' }));
   const statuses: string[] = [];
@@ -218,7 +218,7 @@ test('file d’attente : couverture obligatoire en premier, expiration après 14
 
 // ------------------------------------------------------------------ POC : règles distinctes
 test('POC B.1 : un appel par modèle (+1 Haiku par exception versionnée) ; B.1 non rejouable ; B.2 non remis à zéro', async () => {
-  const g = new BudgetGuard(new MemoryBudgetStore());
+  const g = testGuard(new MemoryBudgetStore());
   const q = { scope: 'trial' as const, phase: 'B1' as const, runId: 'b1' };
   await g.reserve({ modelKey: 'anthropic-haiku-5-5', inputTokensEstimate: 1000, quota: q });
   // Exception B.1 (incident HTTP 400) : une seule tentative Haiku supplémentaire, dans une autre exécution.
@@ -239,7 +239,7 @@ test('POC B.1 : un appel par modèle (+1 Haiku par exception versionnée) ; B.1 
 });
 
 test('POC B.2 : la fixture déjà analysée en B.1 n’est pas refacturée (36 nouveaux appels par modèle)', async () => {
-  const g = new BudgetGuard(new MemoryBudgetStore());
+  const g = testGuard(new MemoryBudgetStore());
   const adapter = new MockAdapter(() => ({ rawText: mockOutput(), usage: { inputTokens: 500, outputTokens: 50 }, stopReason: 'end_turn' }), MODELS['anthropic-haiku-5-5']);
   await analyzePublication(evaluationSet.items.find((p) => p.id === 'synthetic:orion-multimodal')!, { adapter, guard: g, quota: { scope: 'trial', phase: 'B1', runId: 'b1' } });
   const plan2 = planRun(parseArgs(['--mode=full', '--model=anthropic-haiku-5-5']), evaluationSet.items, g, await g.snapshot());
@@ -252,21 +252,21 @@ test('activation : phrase de confirmation exacte, usage unique, expiration, corr
   const dir = `${await tmp()}/`;
   try {
     const models = ['anthropic-haiku-5-5'];
-    await assert.rejects(createGrant({ phase: 'B1', models, maxEur: 0.002, confirm: 'oui' }, dir), ActivationError);
-    await assert.rejects(createGrant({ phase: 'B1', models, maxEur: 0.9, confirm: confirmationPhrase('B1', 0.9) }, dir), ActivationError);
-    await createGrant({ phase: 'B1', models, maxEur: 0.002, confirm: confirmationPhrase('B1', 0.002) }, dir);
-    await assert.rejects(createGrant({ phase: 'B1', models, maxEur: 0.002, confirm: confirmationPhrase('B1', 0.002) }, dir), /existe déjà/);
+    await assert.rejects(testCreateGrant({ phase: 'B1', models, maxEur: 0.002, confirm: 'oui' }, dir), ActivationError);
+    await assert.rejects(testCreateGrant({ phase: 'B1', models, maxEur: 0.9, confirm: confirmationPhrase('B1', 0.9) }, dir), ActivationError);
+    await testCreateGrant({ phase: 'B1', models, maxEur: 0.002, confirm: confirmationPhrase('B1', 0.002) }, dir);
+    await assert.rejects(testCreateGrant({ phase: 'B1', models, maxEur: 0.002, confirm: confirmationPhrase('B1', 0.002) }, dir), /existe déjà/);
     const act = await consumeGrant(dir, { phase: 'B1', models, maxEur: 0.002 });
     assert.equal(act.phase, 'B1');
     await assert.rejects(access(`${dir}real-call-grant.json`), 'autorisation consommée : plus aucun fichier actif');
     await assert.rejects(consumeGrant(dir, { phase: 'B1', models, maxEur: 0.002 }), /Aucune autorisation/, 'réutilisation impossible');
     // Expirée
     const t0 = new Date('2026-11-06T10:00:00Z');
-    await createGrant({ phase: 'B1', models, maxEur: 0.002, confirm: confirmationPhrase('B1', 0.002) }, dir, t0);
+    await testCreateGrant({ phase: 'B1', models, maxEur: 0.002, confirm: confirmationPhrase('B1', 0.002) }, dir, t0);
     await assert.rejects(consumeGrant(dir, { phase: 'B1', models, maxEur: 0.002 }, new Date(t0.getTime() + GRANT_TTL_MS + 1)), /expirée/);
     // Phase, modèles ou montant non couverts : refusée ET détruite
     for (const exp of [{ phase: 'B2' as const, models, maxEur: 0.002 }, { phase: 'B1' as const, models: ['openai-gpt-6-luna'], maxEur: 0.002 }, { phase: 'B1' as const, models, maxEur: 0.01 }]) {
-      await createGrant({ phase: 'B1', models, maxEur: 0.002, confirm: confirmationPhrase('B1', 0.002) }, dir);
+      await testCreateGrant({ phase: 'B1', models, maxEur: 0.002, confirm: confirmationPhrase('B1', 0.002) }, dir);
       await assert.rejects(consumeGrant(dir, exp), /refusée/);
       await assert.rejects(access(`${dir}real-call-grant.json`));
     }

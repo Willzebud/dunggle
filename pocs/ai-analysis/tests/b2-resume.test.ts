@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { forbidNetwork, evaluationSet } from './helpers.js';
+import { forbidNetwork, evaluationSet, testGuard, testCreateGrant } from './helpers.js';
 import { classifySdkError, parseDurationMs, rateLimitHeaders, retryAfterFrom } from '../src/adapters/real.js';
 import { MockAdapter, mockOutput } from '../src/adapters/mock.js';
 import { ProviderError } from '../src/adapters/types.js';
@@ -103,7 +103,7 @@ test('Temporisation persistante : survit au redémarrage, à une erreur et à un
 let ACT: RealCallActivation;
 before(async () => {
   const dir = `${await mkdtemp(join(tmpdir(), 'dunggle-act-'))}/`;
-  await createGrant({ phase: 'B2', models: MODELS2, maxEur: 0.13, confirm: confirmationPhrase('B2', 0.13) }, dir);
+  await testCreateGrant({ phase: 'B2', models: MODELS2, maxEur: 0.13, confirm: confirmationPhrase('B2', 0.13) }, dir);
   ACT = await consumeGrant(dir, { phase: 'B2', models: MODELS2, maxEur: 0.13 });
 });
 const env = { ANTHROPIC_API_KEY: ['sk', 'ant', 'api03', 'TESTREPRISEB2xxxxxxxxxxxxxx'].join('-'), OPENAI_API_KEY: ['sk', 'proj', 'TESTREPRISEB2xxxxxxxxxxxxxxxx'].join('-') } as NodeJS.ProcessEnv;
@@ -111,7 +111,7 @@ const key = (m: string, pub: string) => `${m}|${pub}|${PROMPT_VERSION}`;
 
 /** État réel au 2026-11-06 : B.1 (orion, ancien prompt) puis B.2 interrompu (5 analyses, 1 refus 429 Luna). */
 async function realLedgerReplica(store = new MemoryBudgetStore()) {
-  const g = new BudgetGuard(store);
+  const g = testGuard(store);
   for (const m of MODELS2) {
     const r = await g.reserve({ modelKey: m, inputTokensEstimate: 7460, idempotencyKey: `${m}|${SMOKE_FIXTURE_ID}|1c46e6992832`, quota: { scope: 'trial', phase: 'B1', runId: `b1-${m}` } });
     await g.reconcile(r.id, { inputTokens: 1500, outputTokens: 450 });
@@ -252,7 +252,7 @@ test('Exception liée : inutilisable pour une autre publication, une seule fois,
 });
 
 test('Exception liée : absente si l’exécution de l’incident n’est pas dans le registre (aucun effet hors de cet incident)', async () => {
-  const g = new BudgetGuard(new MemoryBudgetStore());
+  const g = testGuard(new MemoryBudgetStore());
   const r = await g.reserve({ modelKey: LUNA, inputTokensEstimate: 100, idempotencyKey: key(LUNA, INCIDENT_PUB), quota: { scope: 'trial', phase: 'B2', runId: 'autre-run' } });
   assert.equal(r.quota?.exceptionId, undefined, 'tentative ordinaire');
 });

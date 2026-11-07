@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs';
 import type { PublicationInput } from '../src/types.js';
+import { BudgetGuard } from '../src/budget/guard.js';
+import { createGrant } from '../src/security/activation.js';
+import { POC_PHASES, type PocPhase, type PocPhaseQuotas } from '../src/config/quotas.js';
 
 /** Interdit tout accès réseau pendant les tests : un appel à fetch fait échouer le test. */
 export const networkCalls: string[] = [];
@@ -51,3 +54,26 @@ export function pub(over: Partial<PublicationInput> = {}): PublicationInput {
 }
 
 export const byId = (id: string) => evaluationSet.items.find((p) => p.id === id)!;
+
+// ---------------------------------------------------------------------------------------------------------------
+// Phases du POC : toutes FERMÉES dans la configuration versionnée depuis le 2026-11-07 (B1, B2, B3 : active: false).
+// Les tests de MÉCANIQUE (quotas cumulatifs, exceptions, reprises, temporisation, autorisation, sécurité) rejouent
+// B1/B2/B3 sur une COPIE ouverte de la table, injectée par code uniquement, avec des registres simulés ou temporaires.
+// La fermeture réelle est vérifiée séparément (tests/phases-closed.test.ts) avec la configuration par défaut.
+
+export const OPEN_TEST_PHASES: Readonly<Record<PocPhase, Readonly<PocPhaseQuotas>>> = Object.freeze({
+  B1: Object.freeze({ ...POC_PHASES.B1, active: true }),
+  B2: Object.freeze({ ...POC_PHASES.B2, active: true }),
+  B3: Object.freeze({ ...POC_PHASES.B3, active: true }),
+});
+
+type GuardArgs = ConstructorParameters<typeof BudgetGuard>;
+/** Garde budgétaire de test : mêmes paramètres que BudgetGuard (défauts inchangés), table des phases ouverte. */
+export function testGuard(store: GuardArgs[0], limits?: GuardArgs[1], logger?: GuardArgs[2], now?: GuardArgs[3], models?: GuardArgs[4], productionQuotas?: GuardArgs[5]): BudgetGuard {
+  return new BudgetGuard(store, limits, logger, now, models, productionQuotas, OPEN_TEST_PHASES);
+}
+
+/** Autorisation locale de test : mêmes contrôles que createGrant, sur la table des phases ouverte. */
+export function testCreateGrant(p: Parameters<typeof createGrant>[0], dir: string, now?: Date) {
+  return createGrant(p, dir, now, OPEN_TEST_PHASES);
+}
