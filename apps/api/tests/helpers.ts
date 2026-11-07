@@ -64,3 +64,23 @@ export function installFakeFetch(routes: Record<string, FakeRoute>): string[] {
   }) as typeof fetch;
   return calls;
 }
+
+import { BudgetGuard, MemoryUsageLogger } from '../src/budget/guard.js';
+import { MemoryBudgetStore } from '../src/budget/store.js';
+import { DEFAULT_LIMITS, PRODUCTION_QUOTAS, type BudgetLimits, type ProductionQuotas } from '../src/config/limits.js';
+import { MODELS, type ModelConfig } from '../src/config/model.js';
+
+/** Modèles FICTIFS des tests (jamais dans la configuration de l'application). */
+const simulated = { status: 'simulated' as const, checks: [], blockers: [], firstRequestChecks: [] };
+export const TEST_MODELS: Record<string, ModelConfig> = {
+  ...MODELS,
+  /** Tarif volontairement élevé pour exercer les plafonds : (100 × 1 + 800 × 5)/1e6 × 1,25 = 0,005125 € par requête de 100 tokens. */
+  'mock-cheap': { key: 'mock-cheap', provider: 'mock', modelId: 'mock-cheap', pricing: [{ maxInputTokens: null, inputUsdPerMTok: 1, outputUsdPerMTok: 5 }], verifiedAt: 'fictif', sources: [], structuredOutput: 'simulé', billingNotes: [], maxOutputTokensProvider: null, validation: simulated },
+  'mock-unpriced': { key: 'mock-unpriced', provider: 'mock', modelId: 'mock-unpriced', pricing: null, verifiedAt: null, sources: [], structuredOutput: 'simulé', billingNotes: [], maxOutputTokensProvider: null, validation: simulated },
+  'mock-not-validated': { key: 'mock-not-validated', provider: 'mock', modelId: 'x', pricing: [{ maxInputTokens: null, inputUsdPerMTok: 1, outputUsdPerMTok: 1 }], verifiedAt: '2026-11-06', sources: [], structuredOutput: 'simulé', billingNotes: [], maxOutputTokensProvider: null, validation: { ...simulated, status: 'not-validated', blockers: ['test'] } },
+};
+
+/** Garde de test : registre en mémoire, modèles fictifs disponibles, horloge et limites surchargeables. */
+export function testGuard(o: { limits?: Partial<BudgetLimits>; now?: () => Date; logger?: MemoryUsageLogger; store?: MemoryBudgetStore; quotas?: ProductionQuotas } = {}): BudgetGuard {
+  return new BudgetGuard(o.store ?? new MemoryBudgetStore(), { ...DEFAULT_LIMITS, ...o.limits }, o.logger ?? new MemoryUsageLogger(), o.now ?? (() => new Date('2026-11-06T10:00:00.000Z')), TEST_MODELS, o.quotas ?? PRODUCTION_QUOTAS);
+}
