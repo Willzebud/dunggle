@@ -194,7 +194,7 @@ Le registre budgétaire est la **seule source de vérité pour l'argent**. Le jo
 | Lot | Contenu | Statut |
 |---|---|---|
 | L0 | Squelette `apps/api`, test d'indépendance vis-à-vis de `pocs/` | fait |
-| L1 | Analyse : taxonomie, schéma, prompt, politiques de droits, couverture, règles, tests de référence | autorisé |
+| L1 | Analyse : taxonomie, schéma, prompt, politiques de droits, couverture, règles, tests de référence | fait |
 | L2 | Collecte : HTTP, flux, GitHub, normalisation, règles éditoriales, configuration des sources, tests hors ligne | autorisé |
 | L3 | Budget : garde (périmètre opérationnel seul), quotas, temporisation, journal d'usage, tests | autorisé |
 | L4 | `mongodb` : connexion, index, dépôts, stockage du registre (écriture conditionnelle et jeton de garde), verrou ; tests d'intégration ; scénarios A1 à A7 côté stockage | à valider |
