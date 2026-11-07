@@ -16,6 +16,8 @@ Documentation transverse du projet. Les rapports générés restent à côté du
 - [Sécurité des appels IA (POC et futur backend NestJS)](ai-api-security.md)
 - [Audit de sécurité de la phase B.0](../pocs/ai-analysis/reports/phase-b-security-audit.md)
 - [Préparation de B.1 : quotas et activation (B.0.1)](../pocs/ai-analysis/reports/phase-b1-readiness.md)
+- [Préparation de B.2](../pocs/ai-analysis/reports/phase-b2-readiness.md) et [incident 429 de B.2](../pocs/ai-analysis/reports/phase-b2-incident-429.md)
+- [Audit de B.2, test final B3 et décision (§ 8)](../pocs/ai-analysis/reports/phase-b3-final-test.md)
 
 ## Décisions établies par les POC
 
@@ -27,4 +29,5 @@ Documentation transverse du projet. Les rapports générés restent à côté du
 - Identifiants : identifiant natif du flux par défaut, URL normalisée en cas de collision ou si la source l'exige (`idStrategy: 'normalized-url'`, cas de Project Zero).
 - POC 2 : par défaut, une source est en `metadata-only` tant qu’aucune autorisation n’a été vérifiée. La disponibilité du contenu et l’autorisation de le transmettre à une IA restent indépendantes.
 - POC 2 : le budget est réservé avant chaque appel (estimation maximale), puis réconcilié avec l’usage réel. Le budget opérationnel est de 8 €, le maximum absolu de 10 €, le budget d’essai de 0,50 €.
+- POC 2 (B3, 2026-11-07) : **GPT-6 Luna est retenu pour Dunggle selon le protocole B3** (règle de décision figée + revue humaine à l’aveugle). Ce choix vaut pour l’usage testé (tri, classification et résumé en français, prompt `bc786201b88a`) et ne se généralise pas ; limites détaillées au § 8 du rapport.
 - POC 2 : la couverture obligatoire (canaux officiels Angular, TypeScript, MCP, frameworks agentiques suivis, Claude Code) est fixée par la source. Elle garantit la visibilité sans forcer la pertinence, et sans neutraliser les politiques de contenu, les règles éditoriales ni les doublons.

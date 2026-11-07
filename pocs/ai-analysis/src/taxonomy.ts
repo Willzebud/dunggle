@@ -4,9 +4,6 @@
 export const THEMES = ['ANGULAR', 'AI', 'AI_AGENTS', 'DIGITAL_INNOVATION'] as const;
 export type Theme = (typeof THEMES)[number];
 
-/** Thématiques prioritaires : leurs releases restent visibles même si leur nouveauté est faible. */
-export const PRIORITY_THEMES: Theme[] = ['ANGULAR', 'AI', 'AI_AGENTS'];
-
 /** Sous-thématiques connues. La liste est extensible : `other:<libellé>` est accepté puis revu manuellement. */
 export const SUBTHEMES = [
   'quantum_computing',

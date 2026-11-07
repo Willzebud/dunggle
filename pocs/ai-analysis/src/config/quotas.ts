@@ -40,9 +40,10 @@ export const POC_PHASES: Readonly<Record<PocPhase, Readonly<PocPhaseQuotas>>> = 
   B1: Object.freeze({ mode: 'smoke', perModelMax: 1, totalMax: 2, description: 'Smoke tests : un appel par modèle', active: true }),
   B2: Object.freeze({ mode: 'full', perModelMax: 37, totalMax: 74, description: 'Évaluation complète : jusqu’à 37 publications par modèle', active: true }),
   // Test final discriminant (préparé le 2026-11-07, reports/phase-b3-final-test.md) : 15 publications figées
-  // (fixtures/b3/, empreinte B3_FREEZE_SHA256) × 2 modèles. ACTIVÉE le 2026-11-07 sur autorisation explicite de
-  // l'utilisateur (30 appels maximum, plafond 0,06 €, aucune relance) ; l'appel réel exige l'autorisation locale.
-  B3: Object.freeze({ mode: 'final', perModelMax: 15, totalMax: 30, description: 'Test final discriminant : 15 publications figées par modèle', active: true }),
+  // (fixtures/b3/, empreinte B3_FREEZE_SHA256) × 2 modèles. Activée le 2026-11-07 sur autorisation explicite de
+  // l'utilisateur, exécutée (30/30 appels, 0,011615 €) puis CLÔTURÉE et DÉSACTIVÉE le même jour : plus aucune
+  // réservation ni autorisation possible pour B3. Toute réactivation exige un commit relu et une nouvelle autorisation.
+  B3: Object.freeze({ mode: 'final', perModelMax: 15, totalMax: 30, description: 'Test final discriminant : 15 publications figées par modèle', active: false }),
 });
 
 /**

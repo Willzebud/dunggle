@@ -56,7 +56,7 @@ GITHUB_TOKEN=xxx npm run poc:sources
 | `articles.json` | Publications normalisées (10 par source) avec `contentLevel`, `dedupKey`, `idBasis` et `editorial` ; `excluded` contient les publications exclues par une règle éditoriale, avec leur motif |
 | `content-extraction-report.md` | Rapport POC 1.1 (extraction, URL, niveaux, comportement du dashboard) |
 | `content-extraction.json` | Détail des extractions et des contrôles d'URL |
-| `archive/` | Résultats conservés : `poc-1.1-12-sources/` (avant intégration des 5 sources) et `poc-1.2-validated/` (rapports POC 1.2 validés) |
+| `archive/` | Résultats conservés : `poc-1.1-12-sources/` (avant intégration des 5 sources). Les rapports POC 1.2 validés sont dans `poc-1.2/` (l'ancienne copie identique `archive/poc-1.2-validated/` a été retirée le 2026-11-07 ; état complet au tag `poc-final`) |
 | `poc-1.2/` | POC 1.2 : 7 rapports Markdown (candidates, tests, qualité éditoriale, couverture, volume, taxonomie, recommandations) et données brutes JSON |
 
 Chaque exécution **réécrit** ces fichiers avec les réponses réelles du moment.

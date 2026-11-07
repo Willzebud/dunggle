@@ -75,7 +75,10 @@ export interface AnalysisRecord {
   status: AnalysisStatus;
   section: Section;
   analysis: AnalysisOutput | null;
-  /** Écarts entre la sortie du modèle et les règles, corrigés automatiquement. */
+  /**
+   * Écarts entre la sortie du modèle et les règles de contenu ou de couverture. Jamais de correction du texte :
+   * le contenu fautif est SUPPRIMÉ (résumé, points clés, URL ou raison), ou la rubrique est ajustée, et l'écart est tracé ici.
+   */
   violations: string[];
   model: string | null;
   costEur: number | null;

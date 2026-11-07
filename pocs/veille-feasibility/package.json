@@ -2,7 +2,7 @@
   "name": "@dunggle/veille-feasibility",
   "version": "0.1.0",
   "private": true,
-  "description": "Dunggle — POC 1 et 1.1 : faisabilité de la collecte de sources et extraction de contenu",
+  "description": "Dunggle — POC 1, 1.1 et 1.2 (terminés, figés) : collecte de 17 sources, extraction de contenu, règles éditoriales",
   "type": "module",
   "engines": {
     "node": ">=20"

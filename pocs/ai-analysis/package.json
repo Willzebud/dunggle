@@ -2,7 +2,7 @@
   "name": "@dunggle/ai-analysis",
   "version": "0.1.0",
   "private": true,
-  "description": "Dunggle — POC 2 Phase A : préparation de l'analyse IA (politiques de contenu, schéma, budget, adaptateurs simulés). Aucun appel réel.",
+  "description": "Dunggle — POC 2 (terminé, figé) : analyse IA, garde budgétaire, comparaison Claude Haiku 5.5 / GPT-6 Luna (phases A à B3). GPT-6 Luna retenu selon le protocole B3.",
   "type": "module",
   "engines": {
     "node": ">=20"

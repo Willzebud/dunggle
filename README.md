@@ -19,12 +19,14 @@ dunggle/
 │   └── api/                 # Future API NestJS (non initialisée)
 ├── pocs/
 │   ├── veille-feasibility/  # POC 1 et 1.1 : collecte des sources et extraction de contenu
-│   └── ai-analysis/         # POC 2 : analyse et classification par IA (phase A : préparation, sans appel réel)
+│   └── ai-analysis/         # POC 2 : analyse et classification par IA (phases A à B3, terminées)
 ├── docs/                    # Documentation transverse
 ├── package.json             # Racine npm workspaces (apps/*, pocs/*)
 ├── package-lock.json        # Lockfile unique du monorepo
 └── README.md
 ```
+
+Les dossiers `pocs/` sont **terminés et figés** (état de référence : tag Git `poc-final`). Ils conservent le code expérimental, les rapports et les tests ; le code de production les reprendra par copie dans `apps/`, sans les importer. Les preuves locales du POC 2 (`pocs/ai-analysis/var/`) restent hors Git.
 
 Monorepo léger basé sur **npm workspaces**, sans Nx ni Turborepo. Chaque projet garde son propre `package.json` et ses dépendances. Il n'y a pas encore de bibliothèque partagée : un dossier `packages/` sera créé seulement si un besoin réel apparaît.
 
@@ -74,14 +76,15 @@ Les commandes réseau font un passage unique et séquentiel. Ne les lancez pas e
 | **POC 2 — phase A.1** : fiabilisation du protocole | ✅ Terminée | Préfiltre évalué sur 3 statuts (must_keep / must_exclude / ambiguous), couverture obligatoire par source, résumés non produits pour les exclusions, grille de revue manuelle, budget audité (borne haute, coûts incertains, dette, mois civils, redémarrage, interruption) |
 | **POC 2 — phase B.0** : sécurisation des dépenses | ✅ Terminée | Idempotence, arrêt sur coût incertain, intégrité du registre, masquage des secrets, protection contre l’injection, adaptateurs SDK verrouillés, exécuteur `evaluate:real` ; smoke tests préparés (coût maximal 0,003 €), non exécutés |
 | **POC 2 — phase B.0.1** : quotas et activation sécurisée | ✅ Terminée | Quotas persistants (production 20/jour, 10/exécution, 500/mois ; POC B.1 2 appels, B.2 74), autorisation locale à usage unique au lieu d’un commit d’activation |
-| **POC 2 — phase B** : essais réels | ⏳ À valider | Sous budget d’essai de 0,50 €, après validation des points listés dans `pocs/ai-analysis/README.md` |
+| **POC 2 — phases B.1 et B.2** : essais réels | ✅ Terminées | Smoke tests puis évaluation complète (75 appels) sous budget d’essai ; biais des fixtures « fictives » identifié |
+| **POC 2 — phase B3** : test final discriminant | ✅ Terminée | 30 appels, 0,011615 € ; revue humaine à l’aveugle ; **GPT-6 Luna retenu selon le protocole B3** (86,61/100 ; Haiku 5.5 éliminé pour 2 sorties invalides). Limites : `pocs/ai-analysis/reports/phase-b3-final-test.md` § 8. Phase désactivée. Budget d’essai dépensé : 0,036253 € sur 0,50 € |
 
 Rapports détaillés : `pocs/veille-feasibility/results/` (index dans [`docs/README.md`](docs/README.md)).
 
 ## Prochaines étapes
 
 1. Trancher les restrictions de réutilisation du contenu ([`docs/content-reuse.md`](docs/content-reuse.md)), en particulier pour les 3 sources dont le robots.txt exclut les robots d'IA.
-2. **POC 2 — phase B** (`pocs/ai-analysis/`) : premiers appels réels sous budget d’essai, comparaison des modèles sur le jeu d’évaluation.
+2. Intégration de GPT-6 Luna dans un pipeline de production (`apps/api/`, TypeScript simple, MongoDB à terme), sans dépendance au code des POC : décisions d’architecture à valider avant implémentation.
 3. Validation juridique de la réutilisation du texte intégral des pages extraites (conditions d'utilisation, opt-out TDM).
-4. Conception de l'API NestJS (`apps/api/`) et du modèle MongoDB.
+4. Modèle de données MongoDB, puis API HTTP (NestJS) quand le dashboard en aura besoin.
 5. Développement du dashboard Angular (`apps/web/`).

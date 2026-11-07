@@ -1,6 +1,8 @@
-# POC 2 — Analyse IA, phase A (préparation)
+# POC 2 — Analyse IA (phases A à B3)
 
-Cette phase prépare l’analyse et la classification des publications par IA **sans effectuer aucun appel réel** :
+> **POC terminé et figé (2026-11-07).** Phases A, A.1, B.0, B.0.1, B.1, B.2 et B3 réalisées. **GPT-6 Luna est retenu pour Dunggle selon le protocole B3** (86,61/100 ; Claude Haiku 5.5 éliminé pour 2 sorties invalides) ; résultat, coûts et limites : [`reports/phase-b3-final-test.md`](reports/phase-b3-final-test.md) § 8. Toutes les phases de quota sont épuisées et B3 est désactivée : aucun appel réel n'est plus prévu depuis ce POC. Le code de production reprendra les composants utiles par copie, sans importer ce dossier. État de référence : tag Git `poc-final`. Les preuves locales (`var/` : registre budgétaire, journal d'usage, exécutions, revue à l'aveugle) restent hors Git.
+
+La phase A, décrite ci-dessous, a préparé l’analyse et la classification des publications par IA **sans effectuer aucun appel réel** :
 - politiques de contenu par source ;
 - schéma de sortie validé ;
 - adaptateurs (Anthropic, OpenAI et simulé) ;
