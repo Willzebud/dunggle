@@ -44,3 +44,23 @@ export function mockOutput(over: Record<string, unknown> = {}): string {
 }
 
 export const out = (o: Partial<AnalysisOutput> = {}): AnalysisOutput => ({ ...(JSON.parse(mockOutput()) as AnalysisOutput), ...o });
+
+/**
+ * Faux `fetch` pour la collecte hors ligne : ne sert QUE les URL déclarées (réponses synthétiques) et échoue pour
+ * toute autre URL. Les appels sont enregistrés pour vérification.
+ */
+export interface FakeRoute { status?: number; body: string; contentType?: string; headers?: Record<string, string> }
+export function installFakeFetch(routes: Record<string, FakeRoute>): string[] {
+  const calls: string[] = [];
+  globalThis.fetch = (async (input: unknown, init?: { headers?: Record<string, string> }) => {
+    const url = String(input);
+    calls.push(url);
+    const r = routes[url];
+    if (!r) throw new Error(`Accès réseau interdit pendant les tests : ${url}`);
+    void init;
+    const res = new Response(r.body, { status: r.status ?? 200, headers: { 'content-type': r.contentType ?? 'application/rss+xml', ...(r.headers ?? {}) } });
+    Object.defineProperty(res, 'url', { value: url });
+    return res;
+  }) as typeof fetch;
+  return calls;
+}
