@@ -1,4 +1,4 @@
-# POC 1 et 1.1 : faisabilité de la collecte de veille
+# POC 1, 1.1 et 1.2 : faisabilité de la collecte de veille
 
 Ce POC teste les 17 sources de Dunggle (12 initiales et 5 ajoutées au POC 1.2) (flux RSS/Atom et API GitHub Releases), analyse leur faisabilité, puis vérifie l'extraction du contenu des pages et la classification FULL / PARTIAL / MINIMAL. Il ne fait aucun appel à un LLM.
 

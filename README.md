@@ -1,90 +1,57 @@
 # Dunggle
 
-Dunggle est une application de veille technologique. Elle collecte, classe et résume les publications récentes sur trois thématiques :
+Veille technologique personnelle : Dunggle collecte les publications récentes sur **Angular**, l'**intelligence artificielle** et les **agents IA**, puis les classe et les résume en français grâce à un modèle d'IA, dans le respect des droits de chaque source.
 
-- **Angular** : blog officiel, releases du framework et d'Angular Components ;
-- **Intelligence artificielle** : OpenAI, Google DeepMind, Hugging Face, Google Research ;
-- **Agents IA** : Simon Willison, OpenAI Agents SDK, LangGraph, MCP TypeScript SDK, Claude Code.
+## Fonctionnalités
 
-Cinq sources complémentaires, validées au POC 1.2, élargissent la veille de façon sélective : TypeScript Blog (Angular), Google Project Zero (cybersécurité), IEEE Spectrum Robotics (robotique), MIT Technology Review et One Useful Thing (transformations et prospective). Au total : **17 sources**.
+- **Collecte** de 17 sources officielles et sélectionnées (blogs, flux RSS/Atom, releases GitHub), en un passage poli qui respecte `robots.txt`.
+- **Déduplication** par URL normalisée avant toute analyse ; l'URL originale n'est jamais modifiée.
+- **Respect des droits** : une politique par source fixe ce qui peut être conservé, transmis ou résumé. Par défaut : métadonnées seulement.
+- **Analyse par IA** (GPT-6 Luna) : thèmes, type de publication, pertinence, nouveauté, décision de conservation ou d'exclusion, résumé lorsque les droits le permettent.
+- **Maîtrise des coûts** : réservation budgétaire avant chaque appel, quotas quotidiens et mensuels, arrêt en cas de coût incertain.
 
-Cible technique : frontend **Angular**, API **NestJS**, base **MongoDB**. Le projet avance par POC successifs avant toute conception de l'application finale.
+## Stack technique
 
-## Structure du monorepo
+| | Technologies |
+|---|---|
+| **Disponible** | Node.js 22, TypeScript, npm workspaces, `node:test` |
+| **Prévu** | MongoDB 8 (stockage), API HTTP puis NestJS, dashboard Angular |
 
-```text
-dunggle/
-├── apps/
-│   ├── web/                 # Future application Angular (non initialisée)
-│   └── api/                 # Future API NestJS (non initialisée)
-├── pocs/
-│   ├── veille-feasibility/  # POC 1 et 1.1 : collecte des sources et extraction de contenu
-│   └── ai-analysis/         # POC 2 : analyse et classification par IA (phases A à B3, terminées)
-├── docs/                    # Documentation transverse
-├── package.json             # Racine npm workspaces (apps/*, pocs/*)
-├── package-lock.json        # Lockfile unique du monorepo
-└── README.md
-```
+## État du projet
 
-Les dossiers `pocs/` sont **terminés et figés** (état de référence : tag Git `poc-final`). Ils conservent le code expérimental, les rapports et les tests ; le code de production les reprendra par copie dans `apps/`, sans les importer. Les preuves locales du POC 2 (`pocs/ai-analysis/var/`) restent hors Git.
+- ✅ **Études de faisabilité terminées** ([résultats des POC](docs/poc-results.md)) : collecte des sources, niveaux de contenu, politiques de droits, comparaison de modèles. **GPT-6 Luna** a été retenu selon le protocole du test final B3.
+- 🚧 **Backend en cours** dans `apps/api` ([conception](docs/backend-design.md)) : analyse, collecte et garde budgétaire implémentées et testées hors ligne. Prochaines étapes : stockage MongoDB, ingestion, cycle complet.
+- ⏳ **Dashboard Angular** : pas encore commencé.
 
-Monorepo léger basé sur **npm workspaces**, sans Nx ni Turborepo. Chaque projet garde son propre `package.json` et ses dépendances. Il n'y a pas encore de bibliothèque partagée : un dossier `packages/` sera créé seulement si un besoin réel apparaît.
+Aucun appel payant n'est fait sans autorisation explicite. Tous les tests fonctionnent hors ligne.
 
-## Prérequis
+## Démarrage rapide
 
-- Node.js ≥ 20 (testé avec Node.js 22), qui fournit le `fetch` natif
-- npm ≥ 10
-- Accès Internet pour les POC, qui interrogent les vraies sources
-- Facultatif : un token GitHub sans scope (`GITHUB_TOKEN`) pour passer de 60 à 5 000 requêtes/heure (voir `pocs/veille-feasibility/.env.example`)
-
-## Installation
-
-Depuis la racine du dépôt :
+Prérequis : Node.js ≥ 20 (testé avec 22) et npm ≥ 10.
 
 ```bash
-npm install
+npm install          # installe tous les workspaces
+npm test             # tous les tests, hors ligne (POC et backend)
+npm run typecheck    # vérification TypeScript de tous les workspaces
+npm run api:test     # tests du backend seul
+npm run check:secrets  # à lancer avant chaque commit
 ```
 
-## Commandes
+Les commandes de reproduction des POC (collecte réelle, scénarios budgétaires, comparaison des modèles) sont décrites dans le [guide de développement](docs/development.md).
 
-| Commande | Rôle |
-|---|---|
-| `npm test` | Tous les tests hors ligne (POC 1 et POC 2), sans réseau ni facturation |
-| `npm run poc2:test` | Tests du POC 2 seuls (schéma, politiques de contenu, budget, concurrence, erreurs fournisseur) |
-| `npm run poc2:prepare` | POC 2 : prépare l’évaluation (modes envoyés, coûts maximaux, mesure du préfiltre), sans appel |
-| `npm run poc2:budget` | POC 2 : exécute les scénarios budgétaires et génère leur rapport |
-| `npm run poc2:evaluate` | POC 2 : exécuteur de la phase B, en **simulation par défaut** (plan, coût maximal, prérequis manquants). Appels réels verrouillés : voir `pocs/ai-analysis/reports/phase-b-security-audit.md` |
-| `npm run poc2:authorize` | POC 2 : crée une autorisation locale à usage unique (15 min) pour une phase, avec phrase de confirmation exacte ; aucun appel |
-| `npm run check:secrets` | Recherche de secrets et de fichiers sensibles dans les fichiers suivis par Git (à lancer avant chaque commit) |
-| `npm run poc:sources` | POC 1 : teste les 17 sources (un passage, environ 30 requêtes) et génère les rapports de faisabilité |
-| `npm run poc:extraction` | POC 1.1 : extrait le contenu de 6 pages et vérifie un lien par source (environ 21 pages). Nécessite d'avoir lancé `poc:sources` avant |
-| `npm run poc:candidates` | POC 1.2 : re-teste les sources candidates (**requêtes réseau**) |
-| `npm run poc:candidates:offline` | POC 1.2 : régénère les rapports depuis `candidates-raw.json`, sans aucune requête |
-| `npm run poc:all` | POC 1 puis POC 1.1 |
-| `npm run typecheck` | Vérification TypeScript de tous les workspaces |
+## Structure
 
-Les commandes réseau font un passage unique et séquentiel. Ne les lancez pas en boucle.
+```text
+apps/api/   Backend : collecte, analyse, budget (TypeScript)
+apps/web/   Dashboard Angular (à venir)
+docs/       Architecture, développement, droits, sécurité, résultats
+pocs/       Études de faisabilité terminées et figées (code, rapports, tests)
+```
 
-## État des POC
+## Documentation
 
-| POC | Statut | Résultat |
-|---|---|---|
-| **POC 1** : faisabilité de la collecte | ✅ Terminé | 12/12 sources accessibles avec des dates fiables ; environ 9 publications/jour |
-| **POC 1.1** : extraction de contenu et niveaux FULL / PARTIAL / MINIMAL | ✅ Terminé | Hugging Face et Google Research passent de MINIMAL à FULL par extraction de la page (6/6). Aucune source n'est exclue faute de contenu |
-| **POC 1.2** : élargissement ciblé des sources | ✅ Terminé | 8 candidates et 2 variantes testées ; 5 retenues et **intégrées à la configuration** (17 sources) ; règles éditoriales ciblées (« The Download » exclu avec trace, « Video Friday » marqué) ; taxonomie du POC 2 documentée |
-| **POC 2 — phase A** : préparation de l’analyse IA | ✅ Terminée | Politiques de contenu (17 sources en `metadata-only`), schéma validé, adaptateurs Anthropic/OpenAI désactivés et simulés, garde budgétaire (10 € / 8 € / 0,50 €), jeu d’évaluation de 39 publications. **Aucun appel réel** |
-| **POC 2 — phase A.1** : fiabilisation du protocole | ✅ Terminée | Préfiltre évalué sur 3 statuts (must_keep / must_exclude / ambiguous), couverture obligatoire par source, résumés non produits pour les exclusions, grille de revue manuelle, budget audité (borne haute, coûts incertains, dette, mois civils, redémarrage, interruption) |
-| **POC 2 — phase B.0** : sécurisation des dépenses | ✅ Terminée | Idempotence, arrêt sur coût incertain, intégrité du registre, masquage des secrets, protection contre l’injection, adaptateurs SDK verrouillés, exécuteur `evaluate:real` ; smoke tests préparés (coût maximal 0,003 €), non exécutés |
-| **POC 2 — phase B.0.1** : quotas et activation sécurisée | ✅ Terminée | Quotas persistants (production 20/jour, 10/exécution, 500/mois ; POC B.1 2 appels, B.2 74), autorisation locale à usage unique au lieu d’un commit d’activation |
-| **POC 2 — phases B.1 et B.2** : essais réels | ✅ Terminées | Smoke tests puis évaluation complète (75 appels) sous budget d’essai ; biais des fixtures « fictives » identifié |
-| **POC 2 — phase B3** : test final discriminant | ✅ Terminée | 30 appels, 0,011615 € ; revue humaine à l’aveugle ; **GPT-6 Luna retenu selon le protocole B3** (86,61/100 ; Haiku 5.5 éliminé pour 2 sorties invalides). Limites : `pocs/ai-analysis/reports/phase-b3-final-test.md` § 8. Phase désactivée. Budget d’essai dépensé : 0,036253 € sur 0,50 € |
-
-Rapports détaillés : `pocs/veille-feasibility/results/` (index dans [`docs/README.md`](docs/README.md)).
-
-## Prochaines étapes
-
-1. Trancher les restrictions de réutilisation du contenu ([`docs/content-reuse.md`](docs/content-reuse.md)), en particulier pour les 3 sources dont le robots.txt exclut les robots d'IA.
-2. Intégration de GPT-6 Luna dans un pipeline de production (`apps/api/`, TypeScript simple, MongoDB à terme), sans dépendance au code des POC : décisions d’architecture à valider avant implémentation.
-3. Validation juridique de la réutilisation du texte intégral des pages extraites (conditions d'utilisation, opt-out TDM).
-4. Modèle de données MongoDB, puis API HTTP (NestJS) quand le dashboard en aura besoin.
-5. Développement du dashboard Angular (`apps/web/`).
+- [Index de la documentation](docs/README.md)
+- [Conception du backend](docs/backend-design.md)
+- [Guide de développement](docs/development.md)
+- [Réutilisation des contenus](docs/content-reuse.md) et [sécurité des appels IA](docs/ai-api-security.md)
+- [Résultats des POC](docs/poc-results.md)

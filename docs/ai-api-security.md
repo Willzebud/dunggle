@@ -1,6 +1,6 @@
-# Sécurité des appels IA — règles pour Dunggle (POC et futur backend NestJS)
+# Sécurité des appels IA — règles pour Dunggle
 
-> Document de référence. Ce qui est **implémenté** aujourd’hui se trouve dans `pocs/ai-analysis/` (voir `reports/phase-b-security-audit.md`). Les règles marquées **[NestJS]** sont à appliquer lors du développement de l’API.
+> Document de référence. Ces règles ont été implémentées et auditées dans le POC 2 ([audit de sécurité B.0](../pocs/ai-analysis/reports/phase-b-security-audit.md)), puis reprises dans le backend `apps/api` ([conception](backend-design.md)). Les règles marquées **[NestJS]** s’appliqueront à la future API HTTP.
 
 ## Principes
 
