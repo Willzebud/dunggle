@@ -1,6 +1,6 @@
 /**
  * Préparation du test final B3 (hors ligne, aucun réseau) : jeu figé sans mention de fiction transmise,
- * politiques de contenu, gel par empreinte, phase inactive, consignes de longueur, conservation locale des sorties
+ * politiques de contenu, gel par empreinte, phase B3 (activée sur autorisation), consignes de longueur, conservation locale des sorties
  * rejetées, règle de décision (éliminations, écart, départage, artefacts de protocole, revue humaine).
  */
 import { test, before } from 'node:test';
@@ -116,19 +116,17 @@ test('Gel B3 : empreinte et version du prompt vérifiées ; toute modification e
   assert.match(bad.problem!, /modifiées après le gel/);
 });
 
-// ================================================================ 3. Phase inactive, quota distinct
-test('Phase B3 : quota distinct (15 par modèle, 30 au total), INACTIVE : ni réservation ni autorisation', async () => {
-  assert.equal(POC_PHASES.B3.active, false);
+// ================================================================ 3. Phase B3 activée, quota distinct
+test('Phase B3 : activée sur autorisation (2026-11-07), quota distinct 15 par modèle / 30 au total appliqué', async () => {
+  assert.equal(POC_PHASES.B3.active, true);
   assert.deepEqual([POC_PHASES.B3.perModelMax, POC_PHASES.B3.totalMax], [15, 30]);
   assert.equal(phaseForMode('final'), 'B3');
-  assert.equal(POC_PHASES.B1.active && POC_PHASES.B2.active, true, 'historique inchangé');
   const g = new BudgetGuard(new MemoryBudgetStore());
-  await assert.rejects(g.reserve({ modelKey: HAIKU, inputTokensEstimate: 1000, idempotencyKey: `${HAIKU}|b3:x|${PROMPT_VERSION}`, quota: { scope: 'trial', phase: 'B3', runId: 'b3' } }), (e: unknown) => e instanceof BudgetRefusedError && e.code === 'quota-phase-inactive');
-  const s = await g.snapshot();
-  assert.equal(Object.keys(s.reservations).length, 0);
-  assert.equal(s.trial.reservedEur, 0);
+  for (let i = 0; i < 15; i++) await g.reserve({ modelKey: HAIKU, inputTokensEstimate: 1000, idempotencyKey: `${HAIKU}|b3:${i}|${PROMPT_VERSION}`, quota: { scope: 'trial', phase: 'B3', runId: `b3-${i}` } });
+  await assert.rejects(g.reserve({ modelKey: HAIKU, inputTokensEstimate: 1000, idempotencyKey: `${HAIKU}|b3:16|${PROMPT_VERSION}`, quota: { scope: 'trial', phase: 'B3', runId: 'b3-16' } }), (e: unknown) => e instanceof BudgetRefusedError && e.code === 'quota-phase-model');
+  // L'autorisation locale reste exigée et bornée par le montant confirmé.
   const tmp = `${await mkdtemp(join(tmpdir(), 'dunggle-grant-'))}/`;
-  await assert.rejects(createGrant({ phase: 'B3', models: [HAIKU, LUNA], maxEur: 0.1, confirm: confirmationPhrase('B3', 0.1) }, tmp), (e: unknown) => e instanceof ActivationError && /inactive/.test((e as Error).message));
+  await assert.rejects(createGrant({ phase: 'B3', models: [HAIKU, LUNA], maxEur: 0.06, confirm: 'AUTORISER B3 0.6 EUR' }, tmp), ActivationError);
 });
 
 test('Plan B3 (simulation) : 30 appels sur le registre réel simulé, coût maximal borné, exécution réelle bloquée', async () => {
@@ -144,7 +142,8 @@ test('Plan B3 (simulation) : 30 appels sur le registre réel simulé, coût maxi
   assert.ok(typical * 1.25 <= ACTIVATION_TTL_MS_BY_PHASE.B3, `durée typique ${Math.round(typical / 60000)} min, marge 25 % ≤ 45 min`);
   const real = parseArgs(['--mode=final', '--real', `--confirm-max-eur=${plan.totalMaxEur}`]);
   const blockers = await realRunBlockers(real, plan, { guard: g, adapterFor: () => { throw new Error('jamais appelé'); }, env: {} });
-  assert.ok(blockers.some((b) => /Phase B3 inactive/.test(b)));
+  assert.ok(!blockers.some((b) => /Phase B3 inactive/.test(b)), 'phase activée');
+  assert.ok(blockers.length > 0, 'clés, autorisation et activation restent exigées');
 });
 
 // ================================================================ 4. Prompt et diagnostic
